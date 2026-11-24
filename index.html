@@ -126,7 +126,7 @@ ul.rules{padding-left:18px;margin:10px 0}ul.rules li{margin:6px 0;color:#d6dcd9}
 <script>
 {
 const KEY='pordlPitching1';
-const RULES={'9-10':{max:75,t:[20,35,50,65]},'11-12':{max:85,t:[20,35,50,65]},'13-14':{max:95,t:[20,35,50,65]},'15-16':{max:95,t:[30,45,60,75]},'17-18':{max:105,t:[30,45,60,80]}};
+const RULES={'9-10':{max:75,tgt:60,t:[20,35,50,65]},'11-12':{max:85,tgt:70,t:[20,35,50,65]},'13-14':{max:95,tgt:80,t:[20,35,50,65]},'15-16':{max:95,tgt:85,t:[30,45,60,75]},'17-18':{max:105,tgt:90,t:[30,45,60,80]}};
 const FEEL=[['great','Great'],['normal','Normal'],['sore','Sore'],['pain','Pain']];
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const $=id=>document.getElementById(id);
@@ -220,18 +220,18 @@ function status(p){
   const oi=offInfo(p);if(oi.has&&oi.longest<60&&p.season!=='shut')warns.push(`Only ${oi.longest} days in a row off from throwing in the last 12 months. ASMI recommends 2–3 months straight, 4 preferred.`);
   if(p.catcher)warns.push('He also catches. Pitch Smart and ASMI advise against catching on days he isn\'t pitching.');
   if(teamsRecent(p)>1)warns.push('He\'s pitched for more than one team in the last 2 weeks. Count every team\'s pitches together and avoid overlapping seasons.');
-  if(warns.length)return {c:'y',h:'Ready, with care',t:`Up to ${R.max} pitches today.`,why:warns.join(' '),ip,elig:TODAY};
-  return {c:'g',h:'Ready to pitch',t:`Up to ${R.max} pitches today (daily max for ages ${p.band}).`,why:'Fully rested under Pitch Smart guidelines.',ip,elig:TODAY};
+  if(warns.length)return {c:'y',h:'Ready, with care',t:`Pordl target: ${R.tgt} pitches · Pitch Smart max ${R.max}.`,why:warns.join(' '),ip,elig:TODAY};
+  return {c:'g',h:'Ready to pitch',t:`Pordl target: ${R.tgt} pitches · Pitch Smart max ${R.max}.`,why:'Fully rested under Pitch Smart guidelines.',ip,elig:TODAY};
 }
 function plan(p,next){
   const R=RULES[p.band],st=status(p),gap=diff(TODAY,next);
   if(!st.elig||st.elig>TODAY)return {n:0,t:'He isn\'t eligible to pitch today.'};
-  if(gap<1)return {n:R.max,t:`Game today: up to his ${R.max} daily max.`};
+  if(gap<1)return {n:R.tgt,t:`Game today: Pordl target ${R.tgt} pitches. Never over the Pitch Smart max of ${R.max}.`};
   const m=dayTotals(p);
   if(gap===1&&m[add(TODAY,-1)])return {n:0,t:`If he pitches today, ${nice(next)} would be a third day in a row. Save him for ${nice(next)} or skip it.`};
   const allowRest=gap-1;let lim=R.max;
   if(allowRest<4)lim=Math.min(R.max,R.t[allowRest]);
-  return {n:lim,t:lim>=R.max?`Any count up to his ${R.max} daily max still leaves him eligible ${nice(next)}.`:`Keep him to ${lim} pitches or fewer today and he can pitch again ${nice(next)}.`};
+  return lim>=R.tgt?{n:R.tgt,t:`Pordl target ${R.tgt} pitches (Pitch Smart max ${R.max}). He'll still be eligible ${nice(next)}.`}:{n:lim,t:`Keep him to ${lim} pitches or fewer today and he can pitch again ${nice(next)}.`};
 }
 
 
@@ -314,7 +314,7 @@ function render(){
     <div class="strip" aria-label="Last 14 days">${days.map(d=>{const n=m[d]||0;return `<div class="day ${pens[d]?'bp':''} ${d===TODAY?'today':''}"><b>${n?`<i style="height:${Math.max(18,n/R.max*100)}%"></i><em>${n}</em>`:''}</b>${WD[dt(d).getDay()][0]}</div>`}).join('')}</div></div>`;
   $('statusBox').insertAdjacentHTML('beforeend',workCard(p));
   const pl=plan(p,p.next||add(TODAY,2));
-  $('planner').innerHTML=`<h3>Plan around the next game</h3><div class="plan"><div><label for="nextG">${p.role==='starter'?'Next start':'Next game he might pitch'}</label><input type="date" id="nextG" value="${esc(p.next||add(TODAY,2))}" min="${TODAY}"></div><div class="big">${pl.n}<small>max pitches today</small></div></div><p class="note" style="font-size:14px;color:#d6dcd9">${esc(pl.t)}</p>`;
+  $('planner').innerHTML=`<h3>Plan around the next game</h3><div class="plan"><div><label for="nextG">${p.role==='starter'?'Next start':'Next game he might pitch'}</label><input type="date" id="nextG" value="${esc(p.next||add(TODAY,2))}" min="${TODAY}"></div><div class="big">${pl.n}<small>pitches today</small></div></div><p class="note" style="font-size:14px;color:#d6dcd9">${esc(pl.t)}</p>`;
   const wk=p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<7&&diff(o.date,TODAY)>=0).reduce((a,o)=>a+(+o.p||0),0);
   const teams=new Set(p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<14&&o.team).map(o=>o.team));
   $('stats').innerHTML=`<div class="st"><b>${wk}</b><span>Game pitches, 7 days</span></div><div class="st"><b>${st.ip.toFixed(1)}</b><span>Innings, 12 months</span><div class="meter"><i style="width:${Math.min(100,st.ip)}%"></i></div></div><div class="st"><b>${teams.size}</b><span>Teams pitched for, 14 days</span></div>`;
@@ -378,10 +378,10 @@ function carePane(p){
   <p class="note">Step-by-step instructions with pictures: <a href="https://www.ortho.ufl.edu/throwers-ten" style="color:var(--mute)">UF Health Throwers Ten</a> · Video demos: <a href="https://www.upmc.com/Services/sports-medicine/for-athletes/baseball/education-material/throwers-ten-exercise-program" style="color:var(--mute)">UPMC Sports Medicine</a>${young(p)?' · For younger throwers, ask a physical therapist about the Youth Throwers Ten.':''}</p>`;
 }
 function rulesPane(p){
-  const rows=Object.entries(RULES).map(([b,r])=>{const t=r.t;return `<tr class="${b===p.band?'me':''}"><td>${b}</td><td>${r.max}</td><td>1–${t[0]}</td><td>${t[0]+1}–${t[1]}</td><td>${t[1]+1}–${t[2]}</td><td>${t[2]+1}–${t[3]}</td><td>${t[3]+1}+</td></tr>`}).join('');
+  const rows=Object.entries(RULES).map(([b,r])=>{const t=r.t;return `<tr class="${b===p.band?'me':''}"><td>${b}</td><td>${r.tgt}</td><td>${r.max}</td><td>1–${t[0]}</td><td>${t[0]+1}–${t[1]}</td><td>${t[1]+1}–${t[2]}</td><td>${t[2]+1}–${t[3]}</td><td>${t[3]+1}+</td></tr>`}).join('');
   return `<h3 style="font-size:20px">Pitch Smart limits and rest</h3><p class="note" style="margin-bottom:8px">Game pitches in a day and the days of rest required before pitching again.</p>
-  <div class="scroll"><table><tr><th>Ages</th><th>Daily max</th><th>0 days</th><th>1 day</th><th>2 days</th><th>3 days</th><th>4 days</th></tr>${rows}</table></div>
-  <ul class="rules"><li>Don't pitch three days in a row, whatever the pitch count.</li><li>Don't pitch in more than one game in a day.</li><li>Stay under 100 innings pitched in any 12 months.</li><li>Take at least 4 months off from throwing each year, 2–3 of them in a row.</li><li>Avoid playing for multiple teams at the same time, and avoid catching on days he isn't pitching.</li><li>Avoid radar guns for young pitchers (ASMI).</li><li>Preseason ramp-up before game pitching: 3–4 weeks (ages 9–12), 4–6 weeks (13–14), 6–8 weeks (15–18), throwing on non-consecutive days (Pitch Smart Preseason Throwing Program).</li></ul>
+  <div class="scroll"><table><tr><th>Ages</th><th>Pordl target</th><th>Pitch Smart max</th><th>0 days</th><th>1 day</th><th>2 days</th><th>3 days</th><th>4 days</th></tr>${rows}</table></div>
+  <ul class="rules"><li>Pordl targets are Marcus McBeth's recommended pitch counts, set below the Pitch Smart max. Stop earlier if he's tired or his mechanics slip.</li><li>Don't pitch three days in a row, whatever the pitch count.</li><li>Don't pitch in more than one game in a day.</li><li>Stay under 100 innings pitched in any 12 months.</li><li>Take at least 4 months off from throwing each year, 2–3 of them in a row.</li><li>Avoid playing for multiple teams at the same time, and avoid catching on days he isn't pitching.</li><li>Avoid radar guns for young pitchers (ASMI).</li><li>Preseason ramp-up before game pitching: 3–4 weeks (ages 9–12), 4–6 weeks (13–14), 6–8 weeks (15–18), throwing on non-consecutive days (Pitch Smart Preseason Throwing Program).</li></ul>
   <div class="warn">These are MLB and USA Baseball Pitch Smart guidelines, not medical advice. If he has pain, not normal soreness, stop throwing and get him checked. Tournament and league rules can be stricter; follow whichever is stricter.</div>
   <p class="note">Source: <a href="https://www.mlb.com/pitch-smart/pitching-guidelines" style="color:var(--mute)">mlb.com/pitch-smart</a></p>`;
 }
@@ -438,7 +438,7 @@ document.addEventListener('submit',e=>{
     if(oType==='game'&&ip&&!/^\d{1,2}(\.[012])?$/.test(ip)){toast('Innings like 3, 3.1 or 3.2');$('oIP').focus();return}
     p.outings.push({id:uid(),date:d,type:oType,team:oType==='game'?$('oTeam').value:'',p:n||0,ip:oType==='game'?ip:'',feel:oFeel});
     const R=RULES[p.band],wasGame=oType==='game';S.tab='today';oType='game';oFeel='normal';render();scrollTo({top:0,behavior:'smooth'});
-    toast(n>R.max&&wasGame?`Saved. ${n} is over the ${R.max} daily max for ages ${p.band}.`:'Outing saved');
+    toast(wasGame&&n>R.max?`Saved. ${n} is over the ${R.max} Pitch Smart max for ages ${p.band}.`:wasGame&&n>R.tgt?`Saved. Over the Pordl target of ${R.tgt}. Watch for fatigue.`:'Outing saved');
   }else if(e.target.id==='fVelo'){
     const d=$('vD').value,mx=parseInt($('vMax').value,10),av=parseInt($('vAvg').value,10)||0;
     if(!d||!(mx>=30&&mx<=105)){toast('Enter a top velo between 30 and 105');return}
