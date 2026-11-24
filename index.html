@@ -113,7 +113,7 @@ ul.rules{padding-left:18px;margin:10px 0}ul.rules li{margin:6px 0;color:#d6dcd9}
 <body>
 <div class="auth" id="authBox" hidden></div>
 <div class="wrap" id="appRoot" hidden>
-  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former pro pitcher</small></div><span class="sync" id="sync"></span></header>
+  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former MLB pitcher</small></div><span class="sync" id="sync"></span></header>
   <div class="who" id="who"></div>
   <div id="sampleBar"></div>
   <div id="statusBox"></div>
@@ -175,7 +175,7 @@ function showApp(){$('authBox').hidden=true;$('appRoot').hidden=false}
 function authView(mode,msg){
   $('appRoot').hidden=true;const a=$('authBox');a.hidden=false;
   const t={in:['Sign in','Sign in'],up:['Create your account','Create account'],reset:['Reset your password','Send reset link'],newpw:['Choose a new password','Save password']}[mode];
-  a.innerHTML=`<div class="mark" style="width:48px;height:48px;font-size:22px">P</div><h1>${t[0]}</h1><p class="lede">${mode==='up'?'Track pitch counts, rest and arm care for every pitcher in your family. Built by Marcus McBeth, former pro pitcher.':mode==='newpw'?'Enter a new password for your account.':mode==='reset'?'We\'ll email you a link to set a new password.':'Pordl Pitching: arm care and workload for youth pitchers.'}</p>
+  a.innerHTML=`<div class="mark" style="width:48px;height:48px;font-size:22px">P</div><h1>${t[0]}</h1><p class="lede">${mode==='up'?'Track pitch counts, rest and arm care for every pitcher in your family. Built by Marcus McBeth, former MLB pitcher.':mode==='newpw'?'Enter a new password for your account.':mode==='reset'?'We\'ll email you a link to set a new password.':'Pordl Pitching: arm care and workload for youth pitchers.'}</p>
    <form class="form" id="authF">${mode!=='newpw'?'<div><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required></div>':''}
    ${mode!=='reset'?`<div><label for="aPw">Password</label><input id="aPw" type="password" autocomplete="${mode==='in'?'current-password':'new-password'}" minlength="6" required></div>`:''}
    <p class="err" id="aErr">${esc(msg||'')}</p><button class="btn" type="submit">${t[1]}</button></form>
@@ -300,7 +300,7 @@ function workCard(p){
   let wk='';if(p.role==='starter'&&p.season==='in'&&p.next&&diff(TODAY,p.next)>=1&&diff(TODAY,p.next)<=8){wk=`<div class="wk">${[...Array(diff(TODAY,p.next)+1)].map((_,i)=>{const d=add(TODAY,i),x=planFor(p,d);return `<div class="wd ${i===0?'now':''}"><b>${i===0?'Today':WD[dt(d).getDay()]}</b>${esc(x.h)}</div>`}).join('')}</div>`}
   return `<div class="work"><div class="top"><div><div class="sub">Today's work · ${p.role==='starter'?'Starter':'Reliever'}${p.season!=='in'?' · '+SEAS(p.season):''}</div><h3>${esc(w.h)}</h3><div class="sub">${esc(w.s)}</div></div></div>
    <div class="chk"><span>How's his arm today?</span>${[['good','Good'],['sore','Sore'],['pain','Pain']].map(([k,n])=>`<button class="chip" data-chk="${k}" aria-pressed="${ck===k}">${n}</button>`).join('')}</div>
-   <div class="items">${items}</div>${wk}${!offInfo(p).has&&p.season!=='shut'?'<p class="note" style="color:#ffe08a">When was his last 2–3 months off from throwing? Add it under Pitchers so the app can track it.</p>':''}<div class="by">Program by Marcus McBeth, former pro pitcher and pitching coach.</div></div>`;
+   <div class="items">${items}</div>${wk}${!offInfo(p).has&&p.season!=='shut'?'<p class="note" style="color:#ffe08a">When was his last 2–3 months off from throwing? Add it under Pitchers so the app can track it.</p>':''}<div class="by">Program by Marcus McBeth, former MLB pitcher and pitching coach.</div></div>`;
 }
 
 /* ---------- render ---------- */
