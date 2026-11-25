@@ -165,7 +165,31 @@ function sample(){
       {id:uid(),date:add(TODAY,-1),type:'game',team:'Travel team',p:18,ip:'1.0',feel:'great'}],
     velo:[[add(TODAY,-40),68,65],[add(TODAY,-12),70,66]],next:add(TODAY,1)}]};
 }
-let S=null,USER=null,DEMO=false,saveT=null,ADMIN=false,WAITING=0;
+let S=null,USER=null,DEMO=false,saveT=null,ADMIN=false,WAITING=0,TIER='free',SUB=null,MYREVIEWS=0;
+const LINKS={program:'https://buy.stripe.com/test_5kQ7sL5MIgTH9jGdzddEs00',pro:'https://buy.stripe.com/test_3cI7sLgrm8nbbrO3YDdEs01',founding:'https://buy.stripe.com/test_8x28wP5MIcDr53q2UzdEs02'},PORTAL='https://billing.stripe.com/p/login/test_5kQ7sL5MIgTH9jGdzddEs00';
+const hasProgram=()=>DEMO||ADMIN||TIER==='program'||TIER==='pro';
+const hasPro=()=>DEMO||ADMIN||TIER==='pro';
+async function loadPlan(){if(!USER||!sb)return;try{const {data}=await sb.from('subscriptions').select('*').eq('user_id',USER.id).maybeSingle();SUB=data||null;TIER=data&&['active','trialing'].includes(data.status)&&data.tier?data.tier:'free'}catch(e){TIER='free'}
+  try{const m=new Date();const start=new Date(m.getFullYear(),m.getMonth(),1).toISOString();const q=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('user_id',USER.id).gte('created_at',start);MYREVIEWS=q.count||0}catch(e){}}
+const payUrl=k=>{const u=LINKS[k];if(!u||u.startsWith('__'))return '';return u+(u.includes('?')?'&':'?')+'client_reference_id='+encodeURIComponent(USER?USER.id:'')+(USER&&USER.email?'&prefilled_email='+encodeURIComponent(USER.email):'')};
+function upsell(kind){const pro=kind==='pro';
+  return `<div class="panel lock"><div class="sub" style="color:var(--or);font-weight:700">${pro?'Pordl Pitching Pro':'Pordl Pitching Program'}</div>
+   <h3 style="font-size:22px;margin:4px 0 6px">${pro?'Get his delivery reviewed by Marcus':'Unlock Marcus\'s daily program'}</h3>
+   <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching each month. Marcus McBeth, former pro pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
+   <button class="btn" data-tab-go="plans" style="margin-top:12px">${pro?'See Pro: $49/month':'See plans: from $15/month'}</button></div>`}
+function plansPane(){
+  const cur=ADMIN?'Reviewer (all access)':TIER==='pro'?'Pro':TIER==='program'?'Program':'Free';
+  const card=(k,name,price,items,cta,extra='')=>{const url=payUrl(k);const mine=(k==='program'&&TIER==='program')||((k==='pro'||k==='founding')&&TIER==='pro');
+    return `<div class="panel" style="${k==='pro'?'border-color:var(--or)':''}"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h3 style="margin:0">${name}</h3><b style="font:900 26px Archivo,sans-serif">${price}<small style="font:600 13px Inter;color:var(--mute)">/month</small></b></div>
+     <ul class="rules">${items.map(i=>`<li>${i}</li>`).join('')}</ul>${extra}
+     ${mine?'<p class="note" style="color:#8df0b2;font-weight:700">Your current plan</p>':(TIER!=='free'&&!ADMIN)?'<p class="note">To switch plans, use Manage subscription below.</p>':DEMO?'<p class="note">Create an account to subscribe.</p>':url?`<a class="btn" href="${esc(url)}" style="text-decoration:none">${cta}</a>`:'<p class="note">Coming soon.</p>'}</div>`};
+  return `<h3 style="font-size:22px">Plans</h3><p class="note" style="margin-top:4px">Your plan: <b style="color:var(--ink)">${cur}</b>${SUB&&SUB.current_period_end&&TIER!=='free'?` · renews ${MN[new Date(SUB.current_period_end).getMonth()]} ${new Date(SUB.current_period_end).getDate()}`:''}</p>
+   ${card('program','Program','$15',['Marcus\'s daily plan for starters and relievers','Ramp-up and off-season phases','Thrower\'s Ten arm care routine','Everything in Free'],'Start Program')}
+   ${card('pro','Pro','$49',['One video review from Marcus every month','Breakdown of his delivery, with drills','Everything in Program'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
+   <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status and game planner</li><li>Arm check-ins, history and velocity log</li></ul></div>
+   ${SUB&&!DEMO&&PORTAL&&!PORTAL.startsWith('__')?`<a class="btn line" href="${esc(PORTAL)}" style="text-decoration:none;margin-top:12px">Manage subscription (card, cancel)</a><p class="note">Sign in there with ${esc(USER.email)}.</p>`:''}
+   <p class="note">Cancel anytime. Payments are handled securely by Stripe.</p>`}
+
 const sb=window.supabase?window.supabase.createClient('https://ohcwenpvwjgaaghltlql.supabase.co','sb_publishable_ECRIznw6p33rffna-NXp6w_M4c4GTu7'):null;
 function migrate(){S.pitchers.forEach(p=>{p.role=p.role||'starter';p.season=['off','pre','build'].includes(p.season)?'ramp':(p.season||'in');if(p.season==='ramp'&&!p.rampStart)p.rampStart=TODAY;p.checks=p.checks||{};p.offs=p.offs||[];p.catcher=!!p.catcher;p.showVelo=!!p.showVelo});}
 const blank=()=>({cur:null,tab:'add',sample:false,pitchers:[{id:uid(),name:'My pitcher',band:'13-14',role:'starter',season:'in',offs:[],catcher:false,checks:{},teams:['High school','Travel team'],outings:[],velo:[],next:add(TODAY,2)}]});
@@ -179,7 +203,8 @@ async function loadUser(u){USER=u;DEMO=false;setSync('Loading…');
   if(error){try{data=JSON.parse(localStorage.getItem(KEY+':'+u.id))}catch(e){}toast('Couldn\'t reach the server. Showing what\'s saved on this device.')}else data=row&&row.data;
   S=data&&data.pitchers?data:blank();if(!S.cur)S.cur=S.pitchers[0].id;migrate();
   try{const r=await sb.rpc('is_admin');ADMIN=!!r.data;if(ADMIN){const q=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('status','waiting');WAITING=q.count||0}}catch(e){ADMIN=false}
-  showApp();render();setSync('Saved');}
+  await loadPlan();showApp();render();setSync('Saved');
+  if(/[?&]paid=1/.test(location.search)){history.replaceState(null,'',location.pathname);toast('Payment received. Unlocking your plan…');for(let i=0;i<10&&TIER==='free';i++){await new Promise(r=>setTimeout(r,2000));await loadPlan()}render();toast(TIER==='free'?'Still processing. Reload in a minute.':'You\'re all set. Welcome to '+(TIER==='pro'?'Pro':'the Program')+'!')}}
 function showApp(){$('authBox').hidden=true;$('appRoot').hidden=false}
 function authView(mode,msg){
   $('appRoot').hidden=true;const a=$('authBox');a.hidden=false;
@@ -304,6 +329,7 @@ function planFor(p,d){
   return {h:'Maintenance day',s:since===null?'No recent start':`Day ${since} after his start`,it:[['throw','Catch play','Some catch every day.'],runFor(p),['care','Arm care','Bands are his preference.'],['lift','Lift','']]};
 }
 function workCard(p){
+  if(!hasProgram()){const ck=p.checks[TODAY]||'';return `<div class="work"><div class="sub">Today's work · ${p.role==='starter'?'Starter':'Reliever'}</div><div class="chk"><span>How's his arm today?</span>${[['good','Good'],['sore','Sore'],['pain','Pain']].map(([k,n])=>`<button class="chip" data-chk="${k}" aria-pressed="${ck===k}">${n}</button>`).join('')}</div>${upsell('program')}</div>`}
   const w=planFor(p,TODAY),ck=p.checks[TODAY]||'';
   const items=w.it.map(([i,b,t])=>`<div class="it">${I[i]}<div><b>${esc(b)}</b>${t?`<span>${esc(t)}</span>`:''}</div></div>`).join('');
   let wk='';if(p.role==='starter'&&p.season==='in'&&p.next&&diff(TODAY,p.next)>=1&&diff(TODAY,p.next)<=8){wk=`<div class="wk">${[...Array(diff(TODAY,p.next)+1)].map((_,i)=>{const d=add(TODAY,i),x=planFor(p,d);return `<div class="wd ${i===0?'now':''}"><b>${i===0?'Today':WD[dt(d).getDay()]}</b>${esc(x.h)}</div>`}).join('')}</div>`}
@@ -329,9 +355,9 @@ function render(){
   const teams=new Set(p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<14&&o.team).map(o=>o.team));
   $('stats').innerHTML=`<div class="st"><b>${wk}</b><span>Game pitches, 7 days</span></div><div class="st"><b>${st.ip.toFixed(1)}</b><span>Innings, 12 months</span><div class="meter"><i style="width:${Math.min(100,st.ip)}%"></i></div></div><div class="st"><b>${teams.size}</b><span>Teams pitched for, 14 days</span></div>`;
   if(S.tab==='queue'&&!ADMIN)S.tab='today';
-  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['rules','Guidelines'],['add','Pitchers']];
+  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
   $('tabs').innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${n}</button>`).join('');
-  $('pane').innerHTML=({today:logPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
+  $('pane').innerHTML=({today:logPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
   if(S.tab==='video')loadMyVideos();if(S.tab==='queue')loadQueue();
   if(S.tab==='velo')drawVelo();
 }
@@ -384,6 +410,8 @@ function drawVelo(){
 const MAXMB=50;
 function videoPane(p){
   if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Video review</h3><p style="margin:0;color:#d6dcd9">Send a video of his delivery and Marcus McBeth, former pro pitcher, breaks it down for you. Create a free account to send one.</p></div>`;
+  if(!hasPro())return upsell('pro')+'<h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>';
+  if(!ADMIN&&MYREVIEWS>=1){const n=new Date();const nx=new Date(n.getFullYear(),n.getMonth()+1,1);return `<div class="panel" style="margin-top:0"><h3>This month's review is in</h3><p style="margin:0;color:#d6dcd9">Pro includes one video review a month. Your next one opens ${MN[nx.getMonth()]} 1.</p></div><h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>`}
   return `<div class="panel" style="margin-top:0"><h3>Send a video to Marcus</h3>
    <p class="note" style="margin-top:0;color:#d6dcd9">Marcus reviews every video himself and replies here, usually within 3 days.</p>
    <details style="margin:8px 0 12px"><summary style="cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center">How to film it</summary>
@@ -443,7 +471,7 @@ async function sendVideo(){
   if(up.error){btn.disabled=false;btn.textContent=`Send ${p.name}'s video`;err.textContent='Upload failed: '+up.error.message;return}
   const ins=await sb.from('reviews').insert({user_id:USER.id,email:USER.email,pitcher_id:p.id,pitcher_name:p.name,band:p.band,role:p.role,video_path:path,angle:$('vAngle').value,note:$('vNote').value.trim().slice(0,1000)});
   if(ins.error){btn.disabled=false;btn.textContent=`Send ${p.name}'s video`;err.textContent='Saved the video but couldn\'t create the request: '+ins.error.message;return}
-  toast('Sent to Marcus');render();
+  MYREVIEWS++;toast('Sent to Marcus');render();
 }
 document.addEventListener('submit',e=>{if(e.target.id==='fVid'){e.preventDefault();e.stopPropagation();sendVideo()}},true);
 document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!sb)return;
@@ -455,6 +483,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('button');i
 });
 
 function carePane(p){
+  if(!hasProgram())return upsell('program');
   const ex=[['1a','Diagonal pattern extension'],['1b','Diagonal pattern flexion'],['2a','External rotation at waist'],['2b','Internal rotation at waist'],['3a','External rotation at shoulder level (optional)'],['3b','Internal rotation at shoulder level (optional)'],['4','Shoulder abduction to shoulder level'],['5','Scaption (scapular plane raises)'],['6','Side-lying external rotation'],['7a','Prone horizontal abduction, neutral'],['7b','Prone horizontal abduction, full external rotation'],['7c','Prone rowing'],['7d','Prone rowing into external rotation'],['8','Press-ups'],['9','Push-ups'],['10a','Biceps curl'],['10b','Triceps press'],['11a','Wrist extension'],['11b','Wrist flexion'],['12a','Wrist supination'],['12b','Wrist pronation']];
   return `<h3 style="font-size:20px">Thrower's Ten</h3>
   <p class="note" style="font-size:14px;color:#d6dcd9">The rotator cuff and arm care routine used by sports medicine programs for throwers. Developed by Kevin Wilk and Dr. James Andrews with the American Sports Medicine Institute.</p>
