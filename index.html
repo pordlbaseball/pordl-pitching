@@ -166,7 +166,7 @@ function sample(){
     velo:[[add(TODAY,-40),68,65],[add(TODAY,-12),70,66]],next:add(TODAY,1)}]};
 }
 let S=null,USER=null,DEMO=false,saveT=null,ADMIN=false,WAITING=0,TIER='free',SUB=null,MYREVIEWS=0;
-const LINKS={program:'https://buy.stripe.com/test_5kQ7sL5MIgTH9jGdzddEs00',pro:'https://buy.stripe.com/test_3cI7sLgrm8nbbrO3YDdEs01',founding:'https://buy.stripe.com/test_8x28wP5MIcDr53q2UzdEs02'},PORTAL='https://billing.stripe.com/p/login/test_5kQ7sL5MIgTH9jGdzddEs00';
+const LINKS={program:'https://buy.stripe.com/6oU7sL0so0UJgM8eDhdEs1n',pro:'https://buy.stripe.com/14AbJ15MI9rf2Vi0MrdEs1m',founding:'https://buy.stripe.com/fZu00j7UQ5aZgM8an1dEs1l'},PORTAL='https://billing.stripe.com/p/login/5kQ7sL5MIgTH9jGdzddEs00';
 const hasProgram=()=>DEMO||ADMIN||TIER==='program'||TIER==='pro';
 const hasPro=()=>DEMO||ADMIN||TIER==='pro';
 async function loadPlan(){if(!USER||!sb)return;try{const {data}=await sb.from('subscriptions').select('*').eq('user_id',USER.id).maybeSingle();SUB=data||null;TIER=data&&['active','trialing'].includes(data.status)&&data.tier?data.tier:'free'}catch(e){TIER='free'}
@@ -188,6 +188,7 @@ function plansPane(){
    ${card('pro','Pro','$49',['One video review from Marcus every month','Breakdown of his delivery, with drills','Everything in Program'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
    <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status and game planner</li><li>Arm check-ins, history and velocity log</li></ul></div>
    ${SUB&&!DEMO&&PORTAL&&!PORTAL.startsWith('__')?`<a class="btn line" href="${esc(PORTAL)}" style="text-decoration:none;margin-top:12px">Manage subscription (card, cancel)</a><p class="note">Sign in there with ${esc(USER.email)}.</p>`:''}
+   ${!DEMO&&TIER==='free'?'<button class="btn line" id="refreshPlan" style="margin-top:12px">Paid? Tap to refresh your plan</button>':''}
    <p class="note">Cancel anytime. Payments are handled securely by Stripe.</p>`}
 
 const sb=window.supabase?window.supabase.createClient('https://ohcwenpvwjgaaghltlql.supabase.co','sb_publishable_ECRIznw6p33rffna-NXp6w_M4c4GTu7'):null;
@@ -477,6 +478,7 @@ document.addEventListener('submit',e=>{if(e.target.id==='fVid'){e.preventDefault
 document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!sb)return;
   if(b.dataset.play){const slot=b.closest('.vslot');b.textContent='Loading…';const u=await signed(b.dataset.play);slot.innerHTML=u?`<video controls playsinline preload="metadata" src="${esc(u)}"></video>`:'<p class="err">Couldn\'t load the video.</p>'}
   else if(b.dataset.qf){S.qf=b.dataset.qf;render()}
+  else if(b.id==='refreshPlan'){b.textContent='Checking…';b.disabled=true;for(let i=0;i<5&&TIER==='free';i++){await loadPlan();if(TIER==='free')await new Promise(r=>setTimeout(r,2000))}render();toast(TIER==='free'?'No payment found yet. Try again in a minute.':'Unlocked! Welcome to '+(TIER==='pro'?'Pro':'the Program')+'.')}
   else if(b.dataset.reply){const id=b.dataset.reply,t=$('rep-'+id).value.trim();if(!t){toast('Write your review first');return}
     b.disabled=true;const {error}=await sb.from('reviews').update({reply:t,status:'done',replied_at:new Date().toISOString()}).eq('id',id);
     if(error){b.disabled=false;toast('Couldn\'t send: '+error.message);return}toast('Review sent');loadQueue()}
