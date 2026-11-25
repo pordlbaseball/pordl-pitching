@@ -180,7 +180,7 @@ function authView(mode,msg){
    ${mode!=='reset'?`<div><label for="aPw">Password</label><input id="aPw" type="password" autocomplete="${mode==='in'?'current-password':'new-password'}" minlength="6" required></div>`:''}
    <p class="err" id="aErr">${esc(msg||'')}</p><button class="btn" type="submit">${t[1]}</button></form>
    <div style="display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:10px">${mode==='in'?'<button class="link" data-auth="up">Create an account</button><button class="link" data-auth="reset">Forgot password?</button>':mode==='newpw'?'':'<button class="link" data-auth="in">I already have an account</button>'}</div>
-   ${mode==='in'||mode==='up'?'<div class="sample" style="margin-top:22px"><span>Want to look around first?</span><button class="btn sm line" id="demoBtn">See a demo</button></div>':''}`;
+   ${mode==='in'||mode==='up'?'<div class="sample" style="margin-top:22px"><span>Want to look around first?</span><button class="btn sm line" id="demoBtn">See a demo</button></div><p class="note" style="margin-top:16px"><a href="/guide" style="color:var(--mute)">New to the app? Read the 2-minute guide</a></p>':''}`;
   a.dataset.mode=mode;}
 async function authSubmit(){const mode=$('authBox').dataset.mode,err=$('aErr'),em=$('aEmail')?$('aEmail').value.trim():'',pw=$('aPw')?$('aPw').value:'';err.textContent='';
   if(!sb){err.textContent='Couldn\'t load the sign-in service. Check your connection and reload.';return}
@@ -307,7 +307,7 @@ function workCard(p){
 function render(){
   const p=P();save();
   $('who').innerHTML=S.pitchers.map(x=>`<button class="chip" data-who="${x.id}" aria-pressed="${x.id===p.id}">${esc(x.name)} · ${x.band} · ${x.role==='reliever'?'RP':'SP'}</button>`).join('')+`<button class="chip" data-tab-go="add">+ Pitcher</button>`;
-  $('sampleBar').innerHTML=DEMO?`<div class="sample"><span>Demo with sample pitchers. Nothing is saved.</span><button class="btn sm" id="leaveDemo">Create account</button></div>`:S.sample?`<div class="sample"><span>Sample pitchers: Jake starts, Luis relieves. Try them, then start your own.</span><button class="btn sm line" id="clearSample">Start my own</button></div>`:'';
+  $('sampleBar').innerHTML=DEMO?`<div class="sample"><span>Demo with sample pitchers. Nothing is saved.</span><button class="btn sm" id="leaveDemo">Create account</button></div>`:S.sample?`<div class="sample"><span>Sample pitchers: Jake starts, Luis relieves. Try them, then start your own.</span><button class="btn sm line" id="clearSample">Start my own</button></div>`:!S.seenGuide?`<div class="sample"><span>New here? <a href="/guide" style="color:var(--ink)">Read the 2-minute guide</a></span><button class="btn sm line" id="dismissGuide">Got it</button></div>`:'';
   const st=status(p),m=dayTotals(p),pens={};p.outings.filter(o=>o.type==='pen').forEach(o=>pens[o.date]=1);
   const days=[...Array(14)].map((_,i)=>add(TODAY,i-13)),R=RULES[p.band];
   $('statusBox').innerHTML=`<div class="status ${st.c}"><div class="nm">${esc(p.name)} · Ages ${p.band} · Today</div><h2>${esc(st.h)}</h2><p>${esc(st.t)}</p><div class="why">${esc(st.why)}</div>
@@ -318,9 +318,9 @@ function render(){
   const wk=p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<7&&diff(o.date,TODAY)>=0).reduce((a,o)=>a+(+o.p||0),0);
   const teams=new Set(p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<14&&o.team).map(o=>o.team));
   $('stats').innerHTML=`<div class="st"><b>${wk}</b><span>Game pitches, 7 days</span></div><div class="st"><b>${st.ip.toFixed(1)}</b><span>Innings, 12 months</span><div class="meter"><i style="width:${Math.min(100,st.ip)}%"></i></div></div><div class="st"><b>${teams.size}</b><span>Teams pitched for, 14 days</span></div>`;
-  const tabs=[['today','Log outing'],['log','History'],['velo','Velocity'],['care','Arm care'],['rules','Guidelines'],['add','Pitchers']];
+  const tabs=[['today','Log outing'],['log','History'],['velo','Velocity'],['care','Arm care'],['rules','Guidelines'],['add','Pitchers'],['help','Help']];
   $('tabs').innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${n}</button>`).join('');
-  $('pane').innerHTML=({today:logPane,log:histPane,velo:veloPane,care:carePane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
+  $('pane').innerHTML=({today:logPane,log:histPane,velo:veloPane,care:carePane,rules:rulesPane,add:addPane,help:helpPane}[S.tab]||logPane)(p);
   if(S.tab==='velo')drawVelo();
 }
 function logPane(p){
@@ -385,6 +385,12 @@ function rulesPane(p){
   <div class="warn">These are MLB and USA Baseball Pitch Smart guidelines, not medical advice. If he has pain, not normal soreness, stop throwing and get him checked. Tournament and league rules can be stricter; follow whichever is stricter.</div>
   <p class="note">Source: <a href="https://www.mlb.com/pitch-smart/pitching-guidelines" style="color:var(--mute)">mlb.com/pitch-smart</a></p>`;
 }
+function helpPane(p){
+  return `<h3 style="font-size:20px">How to use Pordl Pitching</h3>
+  <p class="note" style="font-size:14px;color:#d6dcd9">The full guide covers setup, the status card, the daily arm check, logging, seasons and pitch counts. It takes about 2 minutes to read.</p>
+  <a class="btn" href="/guide" style="margin-top:12px;text-decoration:none">Open the guide</a>
+  <ul class="rules"><li>Check the status card before every game.</li><li>Answer "How's his arm today?" every day.</li><li>Log every outing the same day, for every team.</li><li>Aim for the Pordl target. Never go over the Pitch Smart max.</li><li>Pain means stop throwing and get him checked.</li></ul>`;
+}
 function addPane(p){
   return `<div class="form"><h3 style="font-size:20px">${esc(p.name)}'s profile</h3>
    <div class="two"><div><label for="eName">Name</label><input id="eName" value="${esc(p.name)}"></div><div><label for="eBand">Age group</label><select id="eBand">${Object.keys(RULES).map(b=>`<option ${b===p.band?'selected':''}>${b}</option>`).join('')}</select></div></div>
@@ -419,6 +425,7 @@ document.addEventListener('click',e=>{
   else if(b.id==='addOff'){const a=$('offA').value,c=$('offB').value;if(!a||!c||c<=a){toast('Pick a start and an end date');return}p.offs.push([a,c]);p.offs.sort((x,y)=>x[0].localeCompare(y[0]));render();toast(`${diff(a,c)} days off added`)}
   else if(b.dataset.offdel){p.offs.splice(+b.dataset.offdel,1);render()}
   else if(b.id==='showVelo'){p.showVelo=true;render()}
+  else if(b.id==='dismissGuide'){S.seenGuide=true;render()}
   else if(b.id==='signOut'){sb.auth.signOut();S=null;USER=null;authView('in')}
   else if(b.id==='leaveDemo'){DEMO=false;S=null;authView('up')}
   else if(b.dataset.del){p.outings=p.outings.filter(o=>o.id!==b.dataset.del);render();toast('Outing deleted')}
