@@ -101,7 +101,8 @@ ul.rules{padding-left:18px;margin:10px 0}ul.rules li{margin:6px 0;color:#d6dcd9}
 .auth .form{gap:14px}
 .link{background:none;border:0;color:var(--mute);font:600 14px Inter,sans-serif;text-decoration:underline;cursor:pointer;padding:8px 0;min-height:40px}
 .err{color:#ff9a92;font-size:14px;font-weight:600;min-height:1.2em;margin:0}
-.sync{font-size:12px;color:var(--mute);margin-left:auto;white-space:nowrap}
+.sync{font-size:12px;color:var(--mute);white-space:nowrap;position:absolute;right:6px;top:calc(50% + 23px);line-height:1}
+header{position:relative;padding-bottom:14px}
 .vcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:10px}
 .vcard .hd{display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap}
 .vcard video{width:100%;max-height:420px;border-radius:10px;background:#000;margin-top:10px}
@@ -132,7 +133,7 @@ textarea{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(-
 <body>
 <div class="auth" id="authBox" hidden></div>
 <div class="wrap" id="appRoot" hidden>
-  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former MLB pitcher</small></div><span class="sync" id="sync"></span><a class="btn sm line" href="/guide/" style="flex:none;text-decoration:none;display:inline-flex;align-items:center">Help</a><button class="btn sm line" id="signOutTop" style="flex:none">Sign out</button></header>
+  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former MLB pitcher</small></div><span class="sync" id="sync"></span><a class="btn sm line" href="/guide/" style="flex:none;margin-left:auto;text-decoration:none;display:inline-flex;align-items:center">Help</a><button class="btn sm line" id="signOutTop" style="flex:none">Sign out</button></header>
   <div id="sampleBar"></div>
   <div class="who" id="who"></div>
   <div id="statusBox"></div>
