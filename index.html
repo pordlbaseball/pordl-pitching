@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Pordl Pitching</title>
+<meta name="description" content="Know if he can pitch today. Pitch counts, rest days and arm care for youth pitchers, built by Marcus McBeth, former MLB pitcher.">
+<meta property="og:title" content="Pordl Pitching">
+<meta property="og:description" content="Know if he can pitch today. Pitch counts, rest days and arm care for youth pitchers, built by a former MLB pitcher.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,6 +86,8 @@ tr.me td{background:color-mix(in srgb,var(--or) 16%,transparent);font-weight:700
 ul.rules{padding-left:18px;margin:10px 0}ul.rules li{margin:6px 0;color:#d6dcd9}
 .warn{background:#3a0e0b;border:1px solid #6a1c16;color:#ffc1bb;border-radius:12px;padding:12px 14px;font-size:14px;margin-top:12px}
 .sample{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--panel);border:1px dashed var(--mute);border-radius:12px;padding:8px 12px;font-size:13px;color:var(--mute);margin-top:10px}
+.hero{background:var(--panel);border:1.5px solid var(--or);border-radius:16px;padding:18px;margin-top:10px}.hero h2{font-size:clamp(28px,8vw,40px);font-weight:900;margin:4px 0 8px}.hero p{margin:0 0 10px;color:#d6dcd9}.hero .link{display:block;margin:6px auto 0}
+.quick{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}.quick .btn{width:auto;padding:0 18px}
 .auth{max-width:440px;margin:0 auto;padding:40px 16px}
 .auth h1{font-size:clamp(34px,8vw,46px);font-weight:900;margin:16px 0 8px}
 .auth p.lede{color:var(--mute);margin:0 0 22px}
@@ -120,9 +125,9 @@ textarea{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(-
 <body>
 <div class="auth" id="authBox" hidden></div>
 <div class="wrap" id="appRoot" hidden>
-  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former pro pitcher</small></div><span class="sync" id="sync"></span><button class="btn sm line" id="signOutTop" style="flex:none">Sign out</button></header>
-  <div class="who" id="who"></div>
+  <header><div class="mark">P</div><div><h1>Pordl Pitching</h1><small>Arm care and workload, built by a former MLB pitcher</small></div><span class="sync" id="sync"></span><button class="btn sm line" id="signOutTop" style="flex:none">Sign out</button></header>
   <div id="sampleBar"></div>
+  <div class="who" id="who"></div>
   <div id="statusBox"></div>
   <div class="panel" id="planner"></div>
   <div class="stats" id="stats"></div>
@@ -134,6 +139,7 @@ textarea{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(-
 {
 const KEY='pordlPitching1';
 const RULES={'9-10':{max:75,t:[20,35,50,65]},'11-12':{max:85,t:[20,35,50,65]},'13-14':{max:95,t:[20,35,50,65]},'15-16':{max:95,t:[30,45,60,75]},'17-18':{max:105,t:[30,45,60,80]}};
+const TARGET={'9-10':60,'11-12':70,'13-14':80,'15-16':85,'17-18':90};
 const FEEL=[['great','Great'],['normal','Normal'],['sore','Sore'],['pain','Pain']];
 const WD=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'],MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const $=id=>document.getElementById(id);
@@ -175,7 +181,7 @@ const payUrl=k=>{const u=LINKS[k];if(!u||u.startsWith('__'))return '';return u+(
 function upsell(kind){const pro=kind==='pro';
   return `<div class="panel lock"><div class="sub" style="color:var(--or);font-weight:700">${pro?'Pordl Pitching Pro':'Pordl Pitching Program'}</div>
    <h3 style="font-size:22px;margin:4px 0 6px">${pro?'Get his delivery reviewed by Marcus':'Unlock Marcus\'s daily program'}</h3>
-   <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching each month. Marcus McBeth, former pro pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
+   <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching each month. Marcus McBeth, former MLB pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
    <button class="btn" data-tab-go="plans" style="margin-top:12px">${pro?'See Pro: $49/month':'See plans: from $15/month'}</button></div>`}
 function plansPane(){
   const cur=ADMIN?'Reviewer (all access)':TIER==='pro'?'Pro':TIER==='program'?'Program':'Free';
@@ -195,7 +201,7 @@ const sb=window.supabase?window.supabase.createClient('https://ohcwenpvwjgaaghlt
 function migrate(){S.pitchers.forEach(p=>{p.role=p.role||'starter';p.season=['off','pre','build'].includes(p.season)?'ramp':(p.season||'in');if(p.season==='ramp'&&!p.rampStart)p.rampStart=TODAY;p.checks=p.checks||{};p.offs=p.offs||[];p.catcher=!!p.catcher;p.showVelo=!!p.showVelo});}
 const blank=()=>({cur:null,tab:'add',sample:false,pitchers:[{id:uid(),name:'My pitcher',band:'13-14',role:'starter',season:'in',offs:[],catcher:false,checks:{},teams:['High school','Travel team'],outings:[],velo:[],next:add(TODAY,2)}]});
 const setSync=t=>{const e=$('sync');if(e)e.textContent=t};
-function save(){if(!S)return;if(DEMO){setSync('Demo · not saved');return}
+function save(){if(!S)return;if(DEMO){setSync('');return}
   try{localStorage.setItem(KEY+':'+(USER?USER.id:'anon'),JSON.stringify(S))}catch(e){}
   if(!USER||!sb)return;clearTimeout(saveT);setSync('Saving…');
   saveT=setTimeout(async()=>{const {error}=await sb.from('app_state').upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()});setSync(error?'Not saved: '+(String(error.message||error.code||'check connection').slice(0,60)):'Saved')},800);}
@@ -210,7 +216,7 @@ function showApp(){$('authBox').hidden=true;$('appRoot').hidden=false}
 function authView(mode,msg){
   $('appRoot').hidden=true;const a=$('authBox');a.hidden=false;
   const t={in:['Sign in','Sign in'],up:['Create your account','Create account'],reset:['Reset your password','Send reset link'],newpw:['Choose a new password','Save password']}[mode];
-  a.innerHTML=`<div class="mark" style="width:48px;height:48px;font-size:22px">P</div><h1>${t[0]}</h1><p class="lede">${mode==='up'?'Track pitch counts, rest and arm care for every pitcher in your family. Built by Marcus McBeth, former pro pitcher.':mode==='newpw'?'Enter a new password for your account.':mode==='reset'?'We\'ll email you a link to set a new password.':'Pordl Pitching: arm care and workload for youth pitchers.'}</p>
+  a.innerHTML=`<div class="mark" style="width:48px;height:48px;font-size:22px">P</div><h1>${t[0]}</h1><p class="lede">${mode==='up'?'Track pitch counts, rest and arm care for every pitcher in your family. Built by Marcus McBeth, former MLB pitcher.':mode==='newpw'?'Enter a new password for your account.':mode==='reset'?'We\'ll email you a link to set a new password.':'Pordl Pitching: arm care and workload for youth pitchers.'}</p>
    <form class="form" id="authF">${mode!=='newpw'?'<div><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required></div>':''}
    ${mode!=='reset'?`<div><label for="aPw">Password</label><input id="aPw" type="password" autocomplete="${mode==='in'?'current-password':'new-password'}" minlength="6" required></div>`:''}
    <p class="err" id="aErr">${esc(msg||'')}</p><button class="btn" type="submit">${t[1]}</button></form>
@@ -232,6 +238,7 @@ async function authSubmit(){const mode=$('authBox').dataset.mode,err=$('aErr'),e
 const P=()=>S.pitchers.find(p=>p.id===S.cur)||S.pitchers[0];
 
 /* ---------- Pitch Smart engine ---------- */
+function todayCap(p,m){const T=TARGET[p.band],y=m[add(TODAY,-1)]||0;return y?Math.max(0,Math.min(T,40,90-y)):T}
 const restFor=(band,n)=>{const t=RULES[band].t;let r=0;for(const x of t)if(n>x)r++;return r};
 function dayTotals(p){const m={};p.outings.filter(o=>o.type==='game').forEach(o=>{m[o.date]=(m[o.date]||0)+(+o.p||0)});return m}
 function status(p){
@@ -255,18 +262,21 @@ function status(p){
   const oi=offInfo(p);if(oi.has&&oi.longest<60&&p.season!=='shut')warns.push(`Only ${oi.longest} days in a row off from throwing in the last 12 months. ASMI recommends 2–3 months straight, 4 preferred.`);
   if(p.catcher)warns.push('He also catches. Pitch Smart and ASMI advise against catching on days he isn\'t pitching.');
   if(teamsRecent(p)>1)warns.push('He\'s pitched for more than one team in the last 2 weeks. Count every team\'s pitches together and avoid overlapping seasons.');
-  if(warns.length)return {c:'y',h:'Ready, with care',t:`Up to ${R.max} pitches today.`,why:warns.join(' '),ip,elig:TODAY};
-  return {c:'g',h:'Ready to pitch',t:`Up to ${R.max} pitches today (daily max for ages ${p.band}).`,why:'Fully rested under Pitch Smart guidelines.',ip,elig:TODAY};
+  const cap=todayCap(p,m),T=TARGET[p.band];
+  if(pY&&cap<=0)return {c:'r',h:'Rest today',t:`He threw ${m[add(TODAY,-1)]} pitches yesterday. Pordl rule: no more than 90 over two days.`,why:'Rest and arm care today.',ip,elig:add(TODAY,1)};
+  if(pY)warns[0]=`He pitched yesterday (${m[add(TODAY,-1)]}). Pordl day-after rule: no more than 40 today and 90 over the two days. If he pitches today he can't pitch tomorrow.`;
+  if(warns.length)return {c:'y',h:'Ready, with care',t:`Up to ${cap} pitches today (Pordl target).`,why:warns.join(' ')+` Pitch Smart max for ages ${p.band} is ${R.max}.`,ip,elig:TODAY};
+  return {c:'g',h:'Ready to pitch',t:`Up to ${T} pitches today (Pordl target for ages ${p.band}).`,why:`Fully rested. Pordl targets sit below the Pitch Smart max of ${R.max}.`,ip,elig:TODAY};
 }
 function plan(p,next){
   const R=RULES[p.band],st=status(p),gap=diff(TODAY,next);
   if(!st.elig||st.elig>TODAY)return {n:0,t:'He isn\'t eligible to pitch today.'};
-  if(gap<1)return {n:R.max,t:`Game today: up to his ${R.max} daily max.`};
-  const m=dayTotals(p);
+  const m=dayTotals(p),cap=todayCap(p,m);
+  if(gap<1)return {n:cap,t:`Game today: up to ${cap} pitches (Pordl target).`};
   if(gap===1&&m[add(TODAY,-1)])return {n:0,t:`If he pitches today, ${nice(next)} would be a third day in a row. Save him for ${nice(next)} or skip it.`};
-  const allowRest=gap-1;let lim=R.max;
-  if(allowRest<4)lim=Math.min(R.max,R.t[allowRest]);
-  return {n:lim,t:lim>=R.max?`Any count up to his ${R.max} daily max still leaves him eligible ${nice(next)}.`:`Keep him to ${lim} pitches or fewer today and he can pitch again ${nice(next)}.`};
+  const allowRest=gap-1;let lim=cap;
+  if(allowRest<4)lim=Math.min(cap,R.t[allowRest]);
+  return {n:lim,t:lim>=cap?`Any count up to ${cap} (Pordl target) still leaves him eligible ${nice(next)}.`:`Keep him to ${lim} pitches or fewer today and he can pitch again ${nice(next)}.`};
 }
 
 
@@ -336,19 +346,20 @@ function workCard(p){
   let wk='';if(p.role==='starter'&&p.season==='in'&&p.next&&diff(TODAY,p.next)>=1&&diff(TODAY,p.next)<=8){wk=`<div class="wk">${[...Array(diff(TODAY,p.next)+1)].map((_,i)=>{const d=add(TODAY,i),x=planFor(p,d);return `<div class="wd ${i===0?'now':''}"><b>${i===0?'Today':WD[dt(d).getDay()]}</b>${esc(x.h)}</div>`}).join('')}</div>`}
   return `<div class="work"><div class="top"><div><div class="sub">Today's work · ${p.role==='starter'?'Starter':'Reliever'}${p.season!=='in'?' · '+SEAS(p.season):''}</div><h3>${esc(w.h)}</h3><div class="sub">${esc(w.s)}</div></div></div>
    <div class="chk"><span>How's his arm today?</span>${[['good','Good'],['sore','Sore'],['pain','Pain']].map(([k,n])=>`<button class="chip" data-chk="${k}" aria-pressed="${ck===k}">${n}</button>`).join('')}</div>
-   <div class="items">${items}</div>${wk}${!offInfo(p).has&&p.season!=='shut'?'<p class="note" style="color:#ffe08a">When was his last 2–3 months off from throwing? Add it under Pitchers so the app can track it.</p>':''}<div class="by">Program by Marcus McBeth, former pro pitcher and pitching coach.</div></div>`;
+   <div class="items">${items}</div>${wk}${!offInfo(p).has&&p.season!=='shut'?'<p class="note" style="color:#ffe08a">When was his last 2–3 months off from throwing? Add it under Pitchers so the app can track it.</p>':''}<div class="by">Program by Marcus McBeth, former MLB pitcher and pitching coach.</div></div>`;
 }
 
 /* ---------- render ---------- */
 function render(){
   const p=P();save();
-  {const so=$('signOutTop');if(so)so.textContent=DEMO?'Exit demo':'Sign out';}
+  {const so=$('signOutTop');if(so)so.textContent=DEMO?'Sign in':'Sign out';}
   $('who').innerHTML=S.pitchers.map(x=>`<button class="chip" data-who="${x.id}" aria-pressed="${x.id===p.id}">${esc(x.name)} · ${x.band} · ${x.role==='reliever'?'RP':'SP'}</button>`).join('')+`<button class="chip" data-tab-go="add">+ Pitcher</button>`;
-  $('sampleBar').innerHTML=DEMO?`<div class="sample"><span>Demo with sample pitchers. Nothing is saved.</span><button class="btn sm" id="leaveDemo">Create account</button></div>`:S.sample?`<div class="sample"><span>Sample pitchers: Jake starts, Luis relieves. Try them, then start your own.</span><button class="btn sm line" id="clearSample">Start my own</button></div>`:'';
+  $('sampleBar').innerHTML=DEMO?`<div class="hero"><div class="sub" style="color:var(--or);font-weight:700">Free for baseball families</div><h2>Know if he can pitch today.</h2><p>Type his pitch count after each game. The app tells you when he's rested, how many pitches he can throw next time, and what to do in between. Built by Marcus McBeth, former MLB pitcher and Cardinals scout.</p><p class="note" style="margin:0 0 12px">Below is a sample pitcher. Tap around.</p><button class="btn" id="leaveDemo">Create my free account</button><button class="link" id="signInDemo">I already have an account</button></div>`:S.sample?`<div class="sample"><span>Sample pitchers: Jake starts, Luis relieves. Try them, then start your own.</span><button class="btn sm line" id="clearSample">Start my own</button></div>`:'';
   const st=status(p),m=dayTotals(p),pens={};p.outings.filter(o=>o.type==='pen').forEach(o=>pens[o.date]=1);
   const days=[...Array(14)].map((_,i)=>add(TODAY,i-13)),R=RULES[p.band];
   $('statusBox').innerHTML=`<div class="status ${st.c}"><div class="nm">${esc(p.name)} · Ages ${p.band} · Today</div><h2>${esc(st.h)}</h2><p>${esc(st.t)}</p><div class="why">${esc(st.why)}</div>
     <div class="strip" aria-label="Last 14 days">${days.map(d=>{const n=m[d]||0;return `<div class="day ${pens[d]?'bp':''} ${d===TODAY?'today':''}"><b>${n?`<i style="height:${Math.max(18,n/R.max*100)}%"></i><em>${n}</em>`:''}</b>${WD[dt(d).getDay()][0]}</div>`}).join('')}</div></div>`;
+  if(p.season==='in')$('statusBox').insertAdjacentHTML('beforeend',`<form class="quick" id="fQuick"><input id="qP" type="number" inputmode="numeric" min="1" max="200" placeholder="Pitched today? Pitch count" aria-label="Game pitches today"><button class="btn" type="submit">Log it</button></form>`);
   $('statusBox').insertAdjacentHTML('beforeend',workCard(p));
   const pl=plan(p,p.next||add(TODAY,2));
   $('planner').innerHTML=`<h3>Plan around the next game</h3><div class="plan"><div><label for="nextG">${p.role==='starter'?'Next start':'Next game he might pitch'}</label><input type="date" id="nextG" value="${esc(p.next||add(TODAY,2))}" min="${TODAY}"></div><div class="big">${pl.n}<small>max pitches today</small></div></div><p class="note" style="font-size:14px;color:#d6dcd9">${esc(pl.t)}</p>`;
@@ -410,7 +421,7 @@ function drawVelo(){
 /* ---------- video reviews ---------- */
 const MAXMB=50;
 function videoPane(p){
-  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Video review</h3><p style="margin:0;color:#d6dcd9">Send a video of his delivery and Marcus McBeth, former pro pitcher, breaks it down for you. Create a free account to send one.</p></div>`;
+  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Video review</h3><p style="margin:0;color:#d6dcd9">Send a video of his delivery and Marcus McBeth, former MLB pitcher, breaks it down for you. Create a free account to send one.</p></div>`;
   if(!hasPro())return upsell('pro')+'<h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>';
   if(!ADMIN&&MYREVIEWS>=1){const n=new Date();const nx=new Date(n.getFullYear(),n.getMonth()+1,1);return `<div class="panel" style="margin-top:0"><h3>This month's review is in</h3><p style="margin:0;color:#d6dcd9">Pro includes one video review a month. Your next one opens ${MN[nx.getMonth()]} 1.</p></div><h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>`}
   return `<div class="panel" style="margin-top:0"><h3>Send a video to Marcus</h3>
@@ -496,10 +507,10 @@ function carePane(p){
   <p class="note">Step-by-step instructions with pictures: <a href="https://www.ortho.ufl.edu/throwers-ten" style="color:var(--mute)">UF Health Throwers Ten</a> · Video demos: <a href="https://www.upmc.com/Services/sports-medicine/for-athletes/baseball/education-material/throwers-ten-exercise-program" style="color:var(--mute)">UPMC Sports Medicine</a>${young(p)?' · For younger throwers, ask a physical therapist about the Youth Throwers Ten.':''}</p>`;
 }
 function rulesPane(p){
-  const rows=Object.entries(RULES).map(([b,r])=>{const t=r.t;return `<tr class="${b===p.band?'me':''}"><td>${b}</td><td>${r.max}</td><td>1–${t[0]}</td><td>${t[0]+1}–${t[1]}</td><td>${t[1]+1}–${t[2]}</td><td>${t[2]+1}–${t[3]}</td><td>${t[3]+1}+</td></tr>`}).join('');
-  return `<h3 style="font-size:20px">Pitch Smart limits and rest</h3><p class="note" style="margin-bottom:8px">Game pitches in a day and the days of rest required before pitching again.</p>
-  <div class="scroll"><table><tr><th>Ages</th><th>Daily max</th><th>0 days</th><th>1 day</th><th>2 days</th><th>3 days</th><th>4 days</th></tr>${rows}</table></div>
-  <ul class="rules"><li>Don't pitch three days in a row, whatever the pitch count.</li><li>Don't pitch in more than one game in a day.</li><li>Stay under 100 innings pitched in any 12 months.</li><li>Take at least 4 months off from throwing each year, 2–3 of them in a row.</li><li>Avoid playing for multiple teams at the same time, and avoid catching on days he isn't pitching.</li><li>Avoid radar guns for young pitchers (ASMI).</li><li>Preseason ramp-up before game pitching: 3–4 weeks (ages 9–12), 4–6 weeks (13–14), 6–8 weeks (15–18), throwing on non-consecutive days (Pitch Smart Preseason Throwing Program).</li></ul>
+  const rows=Object.entries(RULES).map(([b,r])=>{const t=r.t;return `<tr class="${b===p.band?'me':''}"><td>${b}</td><td>${TARGET[b]}</td><td>${r.max}</td><td>1–${t[0]}</td><td>${t[0]+1}–${t[1]}</td><td>${t[1]+1}–${t[2]}</td><td>${t[2]+1}–${t[3]}</td><td>${t[3]+1}+</td></tr>`}).join('');
+  return `<h3 style="font-size:20px">Pitch limits and rest</h3><p class="note" style="margin-bottom:8px">Game pitches in a day and the days of rest required before pitching again. Pordl targets are Marcus\'s limits, set below the Pitch Smart max.</p>
+  <div class="scroll"><table><tr><th>Ages</th><th>Pordl target</th><th>Pitch Smart max</th><th>0 days</th><th>1 day</th><th>2 days</th><th>3 days</th><th>4 days</th></tr>${rows}</table></div>
+  <ul class="rules"><li>Pordl day-after rule: if he pitched yesterday, no more than 40 pitches today and 90 over the two days.</li><li>Don't pitch three days in a row, whatever the pitch count.</li><li>Don't pitch in more than one game in a day.</li><li>Stay under 100 innings pitched in any 12 months.</li><li>Take at least 4 months off from throwing each year, 2–3 of them in a row.</li><li>Avoid playing for multiple teams at the same time, and avoid catching on days he isn't pitching.</li><li>Avoid radar guns for young pitchers (ASMI).</li><li>Preseason ramp-up before game pitching: 3–4 weeks (ages 9–12), 4–6 weeks (13–14), 6–8 weeks (15–18), throwing on non-consecutive days (Pitch Smart Preseason Throwing Program).</li></ul>
   <div class="warn">These are MLB and USA Baseball Pitch Smart guidelines, not medical advice. If he has pain, not normal soreness, stop throwing and get him checked. Tournament and league rules can be stricter; follow whichever is stricter.</div>
   <p class="note">Source: <a href="https://www.mlb.com/pitch-smart/pitching-guidelines" style="color:var(--mute)">mlb.com/pitch-smart</a></p>`;
 }
@@ -556,7 +567,7 @@ document.addEventListener('submit',e=>{
     if(oType==='game'&&ip&&!/^\d{1,2}(\.[012])?$/.test(ip)){toast('Innings like 3, 3.1 or 3.2');$('oIP').focus();return}
     p.outings.push({id:uid(),date:d,type:oType,team:oType==='game'?$('oTeam').value:'',p:n||0,ip:oType==='game'?ip:'',feel:oFeel});
     const R=RULES[p.band],wasGame=oType==='game';S.tab='today';oType='game';oFeel='normal';render();scrollTo({top:0,behavior:'smooth'});
-    toast(n>R.max&&wasGame?`Saved. ${n} is over the ${R.max} daily max for ages ${p.band}.`:'Outing saved');
+    toast(n>R.max&&wasGame?`Saved. ${n} is over the ${R.max} daily max for ages ${p.band}.`:n>TARGET[p.band]&&wasGame?`Saved. ${n} is over his Pordl target of ${TARGET[p.band]}.`:'Outing saved');
   }else if(e.target.id==='fVelo'){
     const d=$('vD').value,mx=parseInt($('vMax').value,10),av=parseInt($('vAvg').value,10)||0;
     if(!d||!(mx>=30&&mx<=105)){toast('Enter a top velo between 30 and 105');return}
@@ -565,14 +576,20 @@ document.addEventListener('submit',e=>{
 });
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.auth)authView(b.dataset.auth);
-  else if(b.id==='demoBtn'){DEMO=true;USER=null;S=sample();migrate();showApp();render()}});
+  else if(b.id==='demoBtn')startDemo();
+  else if(b.id==='signInDemo'){DEMO=false;S=null;authView('in')}});
+function startDemo(){DEMO=true;USER=null;S=sample();migrate();showApp();render();scrollTo(0,0)}
+document.addEventListener('submit',e=>{if(e.target.id!=='fQuick')return;e.preventDefault();e.stopPropagation();const p=P(),n=parseInt($('qP').value,10);
+  if(!(n>0&&n<=200)){toast('Enter his pitch count');$('qP').focus();return}
+  p.outings.push({id:uid(),date:TODAY,type:'game',team:p.teams[0]||'',p:n,ip:'',feel:'normal'});render();
+  toast(n>RULES[p.band].max?`Saved. ${n} is over the ${RULES[p.band].max} daily max.`:n>TARGET[p.band]?`Saved. Over his Pordl target of ${TARGET[p.band]}.`:'Saved. Tap how his arm feels below.')},true);
 document.addEventListener('submit',e=>{if(e.target.id==='authF'){e.preventDefault();e.stopPropagation();authSubmit()}},true);
 (async()=>{
   if(!sb){authView('in','Couldn\'t load the sign-in service. Check your connection and reload.');return}
   sb.auth.onAuthStateChange((ev,sess)=>{if(ev==='PASSWORD_RECOVERY')authView('newpw')});
   const {data}=await sb.auth.getSession();
   if(location.hash.includes('type=recovery'))return;
-  if(data.session)loadUser(data.session.user);else authView('in');
+  if(data.session)loadUser(data.session.user);else if(/[?&]signin\b/.test(location.search))authView('in');else startDemo();
 })();
 }
 </script>
