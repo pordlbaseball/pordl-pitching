@@ -202,7 +202,7 @@ function plansPane(){
    <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status and game planner</li><li>Arm check-ins, history and velocity log</li></ul></div>
    ${SUB&&!DEMO&&PORTAL&&!PORTAL.startsWith('__')?`<a class="btn line" href="${esc(PORTAL)}" style="text-decoration:none;margin-top:12px">Manage subscription (card, cancel)</a><p class="note">Sign in there with ${esc(USER.email)}.</p>`:''}
    ${!DEMO&&TIER==='free'?'<button class="btn line" id="refreshPlan" style="margin-top:12px">Paid? Tap to refresh your plan</button>':''}
-   <p class="note">Cancel anytime. Payments are handled securely by Stripe.</p>`}
+   <p class="note">Cancel anytime. Payments are handled securely by Stripe. <a href="/legal/#billing" style="color:var(--or)">Billing &amp; refund terms</a></p>`}
 
 const sb=window.supabase?window.supabase.createClient('https://ohcwenpvwjgaaghltlql.supabase.co','sb_publishable_ECRIznw6p33rffna-NXp6w_M4c4GTu7'):null;
 function migrate(){S.pitchers.forEach(p=>{p.role=p.role||'starter';p.season=['off','pre','build'].includes(p.season)?'ramp':(p.season||'in');if(p.season==='ramp'&&!p.rampStart)p.rampStart=TODAY;p.checks=p.checks||{};p.offs=p.offs||[];p.catcher=!!p.catcher;p.showVelo=!!p.showVelo});}
@@ -226,7 +226,7 @@ function authView(mode,msg){
   a.innerHTML=`<div class="mark" style="width:48px;height:48px;font-size:22px">P</div><h1>${t[0]}</h1><p class="lede">${mode==='up'?'Track pitch counts, rest and arm care for every pitcher in your family. Built by Marcus McBeth, former MLB pitcher.':mode==='newpw'?'Enter a new password for your account.':mode==='reset'?'We\'ll email you a link to set a new password.':'Pordl Pitching: arm care and workload for youth pitchers.'}</p>
    <form class="form" id="authF">${mode!=='newpw'?'<div><label for="aEmail">Email</label><input id="aEmail" type="email" autocomplete="email" required></div>':''}
    ${mode!=='reset'?`<div><label for="aPw">Password</label><input id="aPw" type="password" autocomplete="${mode==='in'?'current-password':'new-password'}" minlength="6" required></div>`:''}
-   <p class="err" id="aErr">${esc(msg||'')}</p><button class="btn" type="submit">${t[1]}</button></form>
+   <p class="err" id="aErr">${esc(msg||'')}</p><button class="btn" type="submit">${t[1]}</button></form>${mode==='up'?'<p class="note" style="margin-top:10px">By creating an account you agree to the <a href="/legal/" style="color:var(--or)">Terms &amp; Privacy Policy</a>.</p>':''}
    <div style="display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:10px">${mode==='in'?'<button class="link" data-auth="up">Create an account</button><button class="link" data-auth="reset">Forgot password?</button>':mode==='newpw'?'':'<button class="link" data-auth="in">I already have an account</button>'}</div>
    ${mode==='in'||mode==='up'?'<div class="sample" style="margin-top:22px"><span>Want to look around first?</span><button class="btn sm line" id="demoBtn">See a demo</button></div>':''}`;
   a.dataset.mode=mode;}
