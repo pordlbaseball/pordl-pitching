@@ -183,7 +183,7 @@ function sample(){
 }
 let S=null,USER=null,DEMO=false,saveT=null,ADMIN=false,WAITING=0,TIER='free',SUB=null,MYREVIEWS=0;
 const LINKS={program:'https://buy.stripe.com/6oU7sL0so0UJgM8eDhdEs1n',pro:'https://buy.stripe.com/14AbJ15MI9rf2Vi0MrdEs1m',founding:'https://buy.stripe.com/fZu00j7UQ5aZgM8an1dEs1l'},PORTAL='https://billing.stripe.com/p/login/5kQ7sL5MIgTH9jGdzddEs00';
-const hasProgram=()=>DEMO||ADMIN||TIER==='program'||TIER==='pro';
+const hasProgram=()=>true;
 const hasPro=()=>DEMO||ADMIN||TIER==='pro';
 async function loadPlan(){if(!USER||!sb)return;try{const {data}=await sb.from('subscriptions').select('*').eq('user_id',USER.id).maybeSingle();SUB=data||null;TIER=data&&['active','trialing'].includes(data.status)&&data.tier?data.tier:'free'}catch(e){TIER='free'}
   try{const m=new Date();const start=new Date(m.getFullYear(),m.getMonth(),1).toISOString();const q=await sb.from('reviews').select('id',{count:'exact',head:true}).eq('user_id',USER.id).gte('created_at',start);MYREVIEWS=q.count||0}catch(e){}}
@@ -192,7 +192,7 @@ function upsell(kind){const pro=kind==='pro';
   return `<div class="panel lock"><div class="sub" style="color:var(--or);font-weight:700">${pro?'Pordl Pitching Pro':'Pordl Pitching Program'}</div>
    <h3 style="font-size:22px;margin:4px 0 6px">${pro?'Get his delivery reviewed by Marcus':'Unlock Marcus\'s daily program'}</h3>
    <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching or his swing each month. Marcus McBeth, former MLB pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
-   <button class="btn" data-tab-go="plans" style="margin-top:12px">${pro?'See Pro: $49/month':'See plans: from $15/month'}</button></div>`}
+   <button class="btn" data-tab-go="plans" style="margin-top:12px">${pro?'See Pro: $49/month':'See plans'}</button></div>`}
 function plansPane(){
   const cur=ADMIN?'Reviewer (all access)':TIER==='pro'?'Pro':TIER==='program'?'Program':'Free';
   const card=(k,name,price,items,cta,extra='')=>{const url=payUrl(k);const mine=(k==='program'&&TIER==='program')||((k==='pro'||k==='founding')&&TIER==='pro');
@@ -200,9 +200,9 @@ function plansPane(){
      <ul class="rules">${items.map(i=>`<li>${i}</li>`).join('')}</ul>${extra}
      ${mine?'<p class="note" style="color:#8df0b2;font-weight:700">Your current plan</p>':(TIER!=='free'&&!ADMIN)?'<p class="note">To switch plans, use Manage subscription below.</p>':DEMO?'<p class="note">Create an account to subscribe.</p>':url?`<a class="btn" href="${esc(url)}" style="text-decoration:none">${cta}</a>`:'<p class="note">Coming soon.</p>'}</div>`};
   return `<h3 style="font-size:22px">Plans</h3><p class="note" style="margin-top:4px">Your plan: <b style="color:var(--ink)">${cur}</b>${SUB&&SUB.current_period_end&&TIER!=='free'?` · renews ${MN[new Date(SUB.current_period_end).getMonth()]} ${new Date(SUB.current_period_end).getDate()}`:''}</p>
-   ${card('program','Program','$15',['Marcus\'s daily plan for starters and relievers','Ramp-up and off-season phases','Thrower\'s Ten arm care routine','Everything in Free'],'Start Program')}
-   ${card('pro','Pro','$49',['One video review from Marcus every month: pitching or hitting','Breakdown of his delivery or swing, with drills','Everything in Program'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
-   <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status and game planner</li><li>Arm check-ins, history and velocity log</li></ul></div>
+   ${card('pro','Pro','$49',['One video review from Marcus every month: pitching or hitting','Breakdown of his delivery or swing, with drills','Everything in Free'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
+   <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status, game and tournament planner</li><li>Marcus's daily plan for starters and relievers, ramp-up and off-season</li><li>Thrower's Ten arm care routine</li><li>Arm check-ins, history, velocity log and coach teams</li></ul></div>
+   ${recruitCard(P(),true)}
    ${SUB&&!DEMO&&PORTAL&&!PORTAL.startsWith('__')?`<a class="btn line" href="${esc(PORTAL)}" style="text-decoration:none;margin-top:12px">Manage subscription (card, cancel)</a><p class="note">Sign in there with ${esc(USER.email)}.</p>`:''}
    ${!DEMO&&TIER==='free'?'<button class="btn line" id="refreshPlan" style="margin-top:12px">Paid? Tap to refresh your plan</button>':''}
    <p class="note">Cancel anytime. Payments are handled securely by Stripe. <a href="/legal/#billing" style="color:var(--or)">Billing &amp; refund terms</a></p>`}
@@ -450,6 +450,38 @@ function workCard(p){
    <div class="items">${items}</div>${wk}${!offInfo(p).has&&p.season!=='shut'?'<p class="note" style="color:#ffe08a">When was his last 2–3 months off from throwing? Add it under Pitchers so the app can track it.</p>':''}<div class="by">Program by Marcus McBeth, former MLB pitcher and pitching coach.</div></div>`;
 }
 
+/* ---------- recruiting leads ---------- */
+const RBANDS=['13-14','15-16','17-18'];
+const GRADS=(()=>{const n=new Date(),y=n.getFullYear()+(n.getMonth()>=6?1:0);return [...Array(7)].map((_,i)=>String(y+i))})();
+function recruitCard(p,always){
+  if(!always&&!RBANDS.includes(p.band))return '';
+  const sent=S.recruitSent&&S.recruitSent[p.id];
+  return `<div class="panel" style="border-color:#3a2a1c"><div class="sub" style="color:var(--or);font-weight:700">Pordl recruiting</div><h3 style="margin:4px 0 6px">Need help with recruiting?</h3>
+   <p style="margin:0;color:#d6dcd9">Marcus played pro ball and scouted for the Cardinals. Through Pordl, he helps families find the right college fit and get in front of coaches.</p>
+   ${sent?`<p class="note" style="color:#8df0b2;font-weight:700;margin-top:10px">Request sent ${MN[dt(sent).getMonth()]} ${dt(sent).getDate()}. Marcus will reach out.</p>`:`<button class="btn" data-tab-go="recruit" style="margin-top:12px">Get recruiting help</button>`}</div>`}
+function recruitPane(p){
+  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Recruiting help from Pordl</h3><p style="margin:0;color:#d6dcd9">Create a free account and you can ask Marcus for recruiting help right from the app.</p><button class="btn" id="leaveDemo" style="margin-top:12px">Create a free account</button><p class="note">Or learn more at <a href="https://pordl.ai" style="color:var(--or)">pordl.ai</a></p></div>`;
+  const sent=S.recruitSent&&S.recruitSent[p.id];
+  return `<div class="panel" style="margin-top:0"><h3>Recruiting help for ${esc(p.name)}</h3>
+   <p style="margin:0 0 10px;color:#d6dcd9">Send this to Marcus and he'll reach out to talk about where ${esc(p.name)} stands and what to do next. No cost to ask.</p>
+   ${sent?`<p class="note" style="color:#8df0b2;font-weight:700">You sent a request ${MN[dt(sent).getMonth()]} ${dt(sent).getDate()}. Marcus will reach out. Need to add something? Send it again below.</p>`:''}
+   <form class="form" id="fRecruit">
+    <div class="two"><div><label for="rGrad">High school grad year</label><select id="rGrad"><option value="">Choose…</option>${GRADS.map(y=>`<option>${y}</option>`).join('')}</select></div>
+    <div><label for="rPos">Positions</label><input id="rPos" value="${esc(p.catcher?'Pitcher, catcher':'Pitcher')}" maxlength="80"></div></div>
+    <div><label for="rPhone">Parent phone (so Marcus can call or text)</label><input id="rPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="(480) 555-0123" maxlength="25"></div>
+    <div><label for="rNote">Anything Marcus should know? (optional)</label><textarea id="rNote" placeholder="e.g. Junior, throws 82, hoping to play JUCO or NAIA"></textarea></div>
+    <p class="err" id="rErr"></p>
+    <button class="btn" type="submit" id="rSend">Send to Marcus</button></form>
+   <p class="note">Your email (${esc(USER?USER.email:'')}) is included. Learn more at <a href="https://pordl.ai" style="color:var(--or)">pordl.ai</a></p></div>`}
+document.addEventListener('submit',async e=>{if(e.target.id!=='fRecruit')return;e.preventDefault();e.stopPropagation();
+  if(DEMO||!USER||!sb)return;const p=P(),err=$('rErr'),b=$('rSend');err.textContent='';
+  if(!$('rGrad').value){err.textContent='Choose his grad year.';$('rGrad').focus();return}
+  const phone=$('rPhone').value.trim();if(!phone){err.textContent='Add a phone number so Marcus can reach you.';$('rPhone').focus();return}
+  b.disabled=true;b.textContent='Sending…';
+  const {error}=await sb.from('recruiting_leads').insert({user_id:USER.id,email:USER.email,pitcher_name:p.name,band:p.band,role:p.role,grad_year:$('rGrad').value,positions:$('rPos').value.trim().slice(0,80),phone:phone.slice(0,25),note:$('rNote').value.trim().slice(0,1000)});
+  if(error){b.disabled=false;b.textContent='Send to Marcus';err.textContent=/24 hours/.test(error.message||'')?error.message:'Couldn\'t send: '+rpcErr(error);return}
+  S.recruitSent=S.recruitSent||{};S.recruitSent[p.id]=TODAY;S.tab='today';render();scrollTo(0,0);toast('Sent to Marcus. He\'ll reach out.')},true);
+
 /* ---------- render ---------- */
 function render(){
   const p=P();save();
@@ -461,7 +493,7 @@ function render(){
   $('statusBox').innerHTML=`<div class="status ${st.c}"><div class="nm">${esc(p.name)} · Ages ${p.band} · Today</div><h2>${esc(st.h)}</h2><p>${esc(st.t)}</p><div class="why">${esc(st.why)}</div>
     <div class="strip" aria-label="Last 14 days">${days.map(d=>{const n=m[d]||0;return `<div class="day ${pens[d]?'bp':''} ${d===TODAY?'today':''}"><b>${n?`<i style="height:${Math.max(18,n/R.max*100)}%"></i><em>${n}</em>`:''}</b>${WD[dt(d).getDay()][0]}</div>`}).join('')}</div></div>`;
   if(p.season==='in')$('statusBox').insertAdjacentHTML('beforeend',`<form class="quick" id="fQuick"><input id="qP" type="number" inputmode="numeric" min="1" max="200" placeholder="Pitched today? Pitch count" aria-label="Game pitches today"><button class="btn" type="submit">Log it</button></form>`);
-  $('statusBox').insertAdjacentHTML('beforeend',workCard(p));
+  $('statusBox').insertAdjacentHTML('beforeend',workCard(p)+recruitCard(p));
   const pl=plan(p,p.next||add(TODAY,2));
   $('planner').innerHTML=`<h3>Plan around the next game</h3><div class="plan"><div><label for="nextG">${p.role==='starter'?'Next start':'Next game he might pitch'}</label><input type="date" id="nextG" value="${esc(p.next||add(TODAY,2))}" min="${TODAY}"></div><div class="big">${pl.n}<small>max pitches today</small></div></div><p class="note" style="font-size:14px;color:#d6dcd9">${esc(pl.t)}</p>`;
   const wk=p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<7&&diff(o.date,TODAY)>=0).reduce((a,o)=>a+(+o.p||0),0);
@@ -470,7 +502,7 @@ function render(){
   if(S.tab==='queue'&&!ADMIN)S.tab='today';
   const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['tour','Tournament'],['team','Team'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
   $('tabs').innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${n}</button>`).join('');
-  $('pane').innerHTML=({today:logPane,tour:tourPane,team:teamPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
+  $('pane').innerHTML=({today:logPane,tour:tourPane,team:teamPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane,recruit:recruitPane}[S.tab]||logPane)(p);
   if(S.tab==='video')loadMyVideos();if(S.tab==='team'&&TEAMS===null&&!DEMO)loadTeams();if(S.tab==='queue')loadQueue();
   if(S.tab==='velo')drawVelo();
 }
