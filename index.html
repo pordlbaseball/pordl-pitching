@@ -634,7 +634,7 @@ function addPane(p){
    <div><label for="nTeams">Teams (comma separated)</label><input id="nTeams" placeholder="High school, Travel team"></div>
    <button class="btn" id="addP" type="button">Add pitcher</button>
    ${S.pitchers.length>1?`<button class="btn line" id="delP" type="button" style="color:#ff9a92">Remove ${esc(p.name)}</button>`:''}
-   ${DEMO?'<p class="note">Demo mode: nothing is saved.</p><button class="btn" id="leaveDemo" type="button">Create a free account</button>':`<p class="note">Signed in as ${esc(USER?USER.email:'')}. Your data syncs to every device you sign in on.</p><button class="btn line" id="signOut" type="button">Sign out</button>`}</div>`;
+   ${DEMO?'<p class="note">Demo mode: nothing is saved.</p><button class="btn" id="leaveDemo" type="button">Create a free account</button>':`<p class="note">Signed in as ${esc(USER?USER.email:'')}. Your data syncs to every device you sign in on.</p><button class="btn line" id="signOut" type="button">Sign out</button><button class="link" id="delAcct" type="button" style="color:#ff9a92;margin-top:8px">Delete account</button><div id="delBox" class="panel" hidden style="border-color:#6a1c16"><h3 style="margin:0 0 6px">Delete your account?</h3><p style="margin:0 0 10px;color:#d6dcd9">This permanently deletes your account and everything in it: every pitcher, outing, arm check, video and team. It can't be undone.${TIER!=='free'||(SUB&&['active','trialing','past_due','unpaid','incomplete'].includes(SUB.status))?' <b style="color:#ffc1bb">Cancel your subscription first under Plans, then Manage subscription.</b>':''}</p><div class="form"><div><label for="delTxt">Type DELETE to confirm</label><input id="delTxt" autocapitalize="characters" autocomplete="off"></div><button class="btn" id="delAcctGo" type="button" style="background:#ff5a4e">Delete my account</button></div></div>`}</div>`;
 }
 
 /* ---------- events ---------- */
@@ -684,6 +684,18 @@ document.addEventListener('submit',e=>{if(e.target.id!=='fQuick')return;e.preven
   if(!(n>0&&n<=200)){toast('Enter his pitch count');$('qP').focus();return}
   p.outings.push({id:uid(),date:TODAY,type:'game',team:p.teams[0]||'',p:n,ip:'',feel:'normal'});render();
   toast(n>RULES[p.band].max?`Saved. ${n} is over the ${RULES[p.band].max} daily max.`:n>TARGET[p.band]?`Saved. Over his Pordl target of ${TARGET[p.band]}.`:'Saved. Tap how his arm feels below.')},true);
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!S||DEMO||!USER)return;
+  if(b.id==='delAcct'){const x=$('delBox');x.hidden=!x.hidden;if(!x.hidden){x.scrollIntoView({block:'center'});$('delTxt').focus()}}
+  else if(b.id==='delAcctGo'){if($('delTxt').value.trim().toUpperCase()!=='DELETE'){toast('Type DELETE to confirm');return}
+    if(ADMIN){toast('Reviewer accounts can\'t be deleted here');return}
+    if(TIER!=='free'||(SUB&&['active','trialing','past_due','unpaid','incomplete'].includes(SUB.status))){toast('Cancel your subscription first');return}
+    b.disabled=true;b.textContent='Deleting…';const uid0=USER.id;
+    try{const {data:f}=await sb.storage.from('videos').list(uid0,{limit:1000});if(f&&f.length)await sb.storage.from('videos').remove(f.map(x=>uid0+'/'+x.name))}catch(err){}
+    const {error}=await sb.rpc('delete_my_account');
+    if(error){b.disabled=false;b.textContent='Delete my account';toast(rpcErr(error));return}
+    clearTimeout(saveT);try{localStorage.removeItem(KEY+':'+uid0)}catch(err){}
+    S=null;USER=null;try{await sb.auth.signOut({scope:'local'})}catch(err){}
+    authView('in','Your account and all its data were deleted.')}});
 document.addEventListener('submit',e=>{if(e.target.id==='authF'){e.preventDefault();e.stopPropagation();authSubmit()}},true);
 (async()=>{
   if(!sb){authView('in','Couldn\'t load the sign-in service. Check your connection and reload.');return}
