@@ -493,7 +493,9 @@ function recruitCard(p,always){
   const sent=S.recruitSent&&S.recruitSent[p.id];
   return `<div class="panel" style="border-color:#3a2a1c"><div class="sub" style="color:var(--or);font-weight:700">Pordl recruiting</div><h3 style="margin:4px 0 6px">Need help with recruiting?</h3>
    <p style="margin:0;color:#d6dcd9">Marcus played pro ball and scouted for the Cardinals. Through Pordl, he helps families find the right college fit and get in front of coaches.</p>
-   ${sent?`<p class="note" style="color:#8df0b2;font-weight:700;margin-top:10px">Request sent ${MN[dt(sent).getMonth()]} ${dt(sent).getDate()}. Marcus will reach out.</p>`:`<button class="btn" data-tab-go="recruit" style="margin-top:12px">Get recruiting help</button>`}</div>`}
+   ${sent?`<p class="note" style="color:#8df0b2;font-weight:700;margin-top:10px">Request sent ${MN[dt(sent).getMonth()]} ${dt(sent).getDate()}. Marcus will reach out.</p>`:`<button class="btn" data-tab-go="recruit" style="margin-top:12px">Get recruiting help</button>`}
+   <a class="btn line" href="/readiness/" style="margin-top:8px;text-decoration:none">Free 2-minute Readiness Check</a>
+   <p class="note" style="margin-top:6px;text-align:center">See which college levels fit him right now.</p></div>`}
 function recruitPane(p){
   if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Recruiting help from Pordl</h3><p style="margin:0;color:#d6dcd9">Create a free account and you can ask Marcus for recruiting help right from the app.</p><button class="btn" id="leaveDemo" style="margin-top:12px">Create a free account</button><p class="note">Or learn more at <a href="https://pordl.ai" style="color:var(--or)">pordl.ai</a></p></div>`;
   const sent=S.recruitSent&&S.recruitSent[p.id];
