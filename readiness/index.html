@@ -87,7 +87,7 @@ li{margin:6px 0}
  <p class="note" style="margin-top:0">Use real, measured numbers. Skip anything you don't know.</p>
  <div class="form" style="margin-top:12px">
   <div id="fP"><label for="fb">Fastball, top velo (mph)</label><input id="fb" inputmode="decimal" placeholder="e.g. 84"></div>
-  <div id="fC"><div class="two"><div><label for="pop">Pop time (sec)</label><input id="pop" inputmode="decimal" placeholder="e.g. 2.05"></div><div><label for="cv">Catcher velo (mph)</label><input id="cv" inputmode="decimal" placeholder="e.g. 76"></div></div></div>
+  <div id="fC"><div class="two"><div><label for="pop">In-game pop time (sec)</label><input id="pop" inputmode="decimal" placeholder="e.g. 2.05"></div><div><label for="cv">Catcher velo (mph)</label><input id="cv" inputmode="decimal" placeholder="e.g. 76"></div></div></div>
   <div id="fIF"><label for="ifv">Infield velo (mph)</label><input id="ifv" inputmode="decimal" placeholder="e.g. 82"></div>
   <div id="fOF"><label for="ofv">Outfield velo (mph)</label><input id="ofv" inputmode="decimal" placeholder="e.g. 84"></div>
   <div id="fH"><div class="two"><div><label for="ev">Max exit velo (mph)</label><input id="ev" inputmode="decimal" placeholder="e.g. 90"></div><div><label for="sixty">60-yard time (sec)</label><input id="sixty" inputmode="decimal" placeholder="e.g. 7.05"></div></div></div>
@@ -126,12 +126,12 @@ li{margin:6px 0}
    Marcus: these are the numbers to check. Edit them here. ===== */
 const LEVELS=['D1','D2','NAIA','JUCO','D3'];
 const BENCH={
-  fb:  {D1:87,D2:84,NAIA:82,JUCO:81,D3:80},   // RHP top fastball, mph (LHP: 2 mph less)
+  fb:  {D1:90,D2:87,NAIA:83,JUCO:85,D3:84},   // RHP top fastball, mph (LHP: 2 mph less). Marcus, Nov 2026
   ev:  {D1:95,D2:90,NAIA:88,JUCO:88,D3:85},   // max exit velo, mph
   sixty:{D1:6.85,D2:7.0,NAIA:7.1,JUCO:7.1,D3:7.2}, // 60 time, sec (lower is better)
   ifv: {D1:85,D2:82,NAIA:80,JUCO:80,D3:78},
   ofv: {D1:88,D2:84,NAIA:82,JUCO:82,D3:80},
-  pop: {D1:2.00,D2:2.08,NAIA:2.12,JUCO:2.12,D3:2.18},
+  pop: {D1:1.99,D2:2.08,NAIA:2.12,JUCO:2.12,D3:2.18}, // in-game pop time; D1 = under 2.00 (Marcus)
   cv:  {D1:78,D2:75,NAIA:73,JUCO:73,D3:71}
 };
 const GROW={fb:2,ev:3,sixty:-.08,ifv:2,ofv:2,pop:-.04,cv:2}; // typical gain per year of high school left
@@ -163,21 +163,20 @@ function bench(k,lvl,yearsLeft){let b=BENCH[k][lvl];if(k==='fb'&&THR==='L')b-=2;
 function meets(k,v,lvl,yl){const b=bench(k,lvl,yl);return LOWER[k]?v<=b:v>=b}
 function evaluate(n,grad){
   const yl=Math.max(0,grad-SENIOR); // years until senior year
-  const tools=TOOLS[POS].filter(k=>n[k]!=null);
-  const tier=k=>{for(let i=0;i<LEVELS.length;i++)if(meets(k,n[k],LEVELS[i],yl))return i;return LEVELS.length};
-  const tiers=tools.map(k=>({k,t:tier(k)}));
-  let main;if(POS==='P')main=tiers[0].t;else{const s=tiers.map(x=>x.t).sort((a,b)=>a-b);main=s[Math.floor((s.length-1)/2)]}
-  if(n.gpa!=null&&n.gpa<2.3&&main<2)main=2; // NCAA D1/D2 academic minimums
-  const fitLevels=LEVELS.filter((_,i)=>i>=main),reach=main>0?LEVELS[main-1]:null;
+  const tools=TOOLS[POS].filter(k=>n[k]!=null),need=Math.floor((tools.length-1)/2)+1;
+  const met=l=>{if(n.gpa!=null&&n.gpa<2.3&&(l==='D1'||l==='D2'))return false;return tools.filter(k=>meets(k,n[k],l,yl)).length>=need};
+  const short=l=>tools.reduce((a,k)=>{const b=bench(k,l,yl);const d=LOWER[k]?n[k]-b:b-n[k];return a+Math.max(0,d)/Math.abs(b)},0);
+  const fitLevels=LEVELS.filter(met),unmet=LEVELS.filter(l=>!met(l)).sort((a,b)=>short(a)-short(b));
+  const reach=unmet.length?unmet[0]:null,main=fitLevels.length?0:LEVELS.length;
   const target=reach||LEVELS[0];
-  const gaps=tiers.map(x=>{const b=bench(x.k,target,yl);const d=LOWER[x.k]?n[x.k]-b:b-n[x.k];return {k:x.k,v:n[x.k],b,d}}).filter(x=>x.d>0).sort((a,b)=>(b.d/Math.abs(b.b))-(a.d/Math.abs(a.b)));
-  return {yl,main,fitLevels,reach,gaps,tiers};
+  const gaps=tools.map(k=>{const b=bench(k,target,yl);const d=LOWER[k]?n[k]-b:b-n[k];return {k,v:n[k],b,d}}).filter(x=>x.d>0).sort((a,b)=>(b.d/Math.abs(b.b))-(a.d/Math.abs(a.b)));
+  return {yl,main,fitLevels,reach,gaps,tiers:tools,met};
 }
 const fmt=(k,v)=>k==='sixty'||k==='pop'?v.toFixed(2):Math.round(v);
 function results(n,info,r){
   const grad=+info.grad,nm=esc(info.pn||'He');
   const fitTxt=r.main>=LEVELS.length?'Not yet at a college level':r.fitLevels.join(', ');
-  const rung=(l,i)=>{const c=i>=r.main&&r.main<LEVELS.length?'fit':(r.reach===l?'reach':'far');const t=c==='fit'?(r.yl?'On track':'Fits now'):c==='reach'?'Within reach':'Not yet';return `<div class="rung"><b>${l}</b><span class="tag ${c}">${t}</span></div>`};
+  const rung=(l,i)=>{const c=r.met(l)?'fit':(r.reach===l?'reach':'far');const t=c==='fit'?(r.yl?'On track':'Fits now'):c==='reach'?'Within reach':'Not yet';return `<div class="rung"><b>${l}</b><span class="tag ${c}">${t}</span></div>`};
   const gapHtml=r.gaps.slice(0,2).map(g=>`<div class="gap"><b>${NAMES[g.k][0].toUpperCase()+NAMES[g.k].slice(1)}:</b> ${fmt(g.k,g.v)}${UNIT[g.k]} now. ${r.reach||'D1'} recruits${r.yl?` on his timeline`:''} are around ${fmt(g.k,g.b)}${UNIT[g.k]}.</div>`).join('');
   const acad=n.gpa==null?'<div class="gap"><b>Grades:</b> add his GPA in the full Blueprint. Grades open doors at every level, especially D3 and academic schools.</div>':n.gpa<3.0?`<div class="gap"><b>Grades:</b> a ${n.gpa.toFixed(2)} GPA limits his options. Getting above 3.0 opens up most D2, NAIA and D3 programs, and more scholarship money.</div>`:n.gpa>=3.5?`<div class="gap"><b>Grades are a weapon:</b> a ${n.gpa.toFixed(2)} GPA opens academic money and strong D3 and academic D1 programs. Use it.</div>`:'';
   const timing=r.yl>=2?`Class of ${grad}: there's time. Coaches can start reaching out June 15 after sophomore year. Use the next year to close the gaps above and get measured numbers and film in front of coaches.`:r.yl===1?`Class of ${grad}: this is the window. Coaches are building their ${grad} lists now. He needs film, verified numbers and a target list this year.`:`Class of ${grad}: time is short. Focus on programs that still have spots, especially at the levels that fit him now.`;
@@ -185,7 +184,7 @@ function results(n,info,r){
    <h2 style="font-size:26px;margin-top:4px">${nm}${r.yl&&r.main<LEVELS.length?' is on track for':':'} ${esc(fitTxt)}</h2>
    <p style="margin:8px 0 0">${r.main>=LEVELS.length?`His numbers are still below what most college programs see on his timeline. That's fixable, and the full Blueprint lays out how.`:r.reach?`${r.yl?'For a '+grad+' grad, his numbers are on track for':'His numbers fit'} <b style="color:var(--ink)">${esc(r.fitLevels[0])}</b>${r.yl?'':' right now'}, and <b style="color:var(--ink)">${esc(r.reach)}</b> is within reach if he closes the gap below.`:`His numbers are ${r.yl?'on a D1 track':'at the D1 level'} for his class. Now it's about film, grades and getting in front of the right coaches.`}</p>
    <div class="ladder">${LEVELS.map(rung).join('')}</div></div>
-   <div class="panel"><h2>What's holding him back</h2>${gapHtml||'<p class="note" style="margin-top:6px">No measurable gaps at the next level. Film and exposure are the next step.</p>'}${acad}</div>
+   <div class="panel"><h2>What's holding him back</h2>${gapHtml||(n.gpa!=null&&n.gpa<2.3&&r.reach&&['D1','D2'].includes(r.reach)?`<div class="gap"><b>Grades are the gap:</b> his numbers are there for ${r.reach}, but D1 and D2 programs need him to meet NCAA academic minimums. Raising his GPA opens those doors.</div>`:'<p class="note" style="margin-top:6px">No measurable gaps at the next level. Film and exposure are the next step.</p>')}${acad}</div>
    <div class="panel"><h2>Timing</h2><p style="margin:6px 0 0">${timing}</p></div>
    <div class="panel" style="border-color:var(--or)"><div class="sub" style="color:var(--or);font-weight:700;font-size:13px">NEXT STEP</div><h2 style="margin-top:4px">Get the full Pordl Blueprint</h2>
    <p style="margin:6px 0 12px">This check uses ${r.tiers.length} number${r.tiers.length===1?'':'s'}. The Blueprint is Marcus's full evaluation: every tool, grades, film, a level projection, target schools and his top 3 next steps. Fill out the free form, then decide.</p>
