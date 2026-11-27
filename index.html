@@ -215,7 +215,7 @@ function save(){if(!S)return;if(DEMO){setSync('');return}
   try{localStorage.setItem(KEY+':'+(USER?USER.id:'anon'),JSON.stringify(S))}catch(e){}
   if(!USER||!sb)return;clearTimeout(saveT);setSync('Saving…');
   saveT=setTimeout(async()=>{const {error}=await sb.from('app_state').upsert({user_id:USER.id,data:S,updated_at:new Date().toISOString()});setSync(error?'Not saved: '+(String(error.message||error.code||'check connection').slice(0,60)):'Saved')},800);}
-async function loadUser(u){USER=u;DEMO=false;setSync('Loading…');
+async function loadUser(u){USER=u;DEMO=false;TEAMS=null;TCTX=null;ROSTER={};setSync('Loading…');
   let data=null;const {data:row,error}=await sb.from('app_state').select('data').eq('user_id',u.id).maybeSingle();
   if(error){try{data=JSON.parse(localStorage.getItem(KEY+':'+u.id))}catch(e){}toast('Couldn\'t reach the server. Showing what\'s saved on this device.')}else data=row&&row.data;
   S=data&&data.pitchers?data:blank();if(!S.cur)S.cur=S.pitchers[0].id;migrate();
@@ -290,7 +290,8 @@ function plan(p,next){
 }
 
 /* ---------- Tournament planner ---------- */
-const TOUR=()=>{if(!S.tourney||!Array.isArray(S.tourney.games))S.tourney={games:[],plan:{}};S.tourney.plan=S.tourney.plan||{};return S.tourney};
+const TOUR=()=>{if(S.tab==='team'&&TCTX){S.teamTours=S.teamTours||{};const k=TCTX;if(!S.teamTours[k]||!Array.isArray(S.teamTours[k].games))S.teamTours[k]={games:[],plan:{}};S.teamTours[k].plan=S.teamTours[k].plan||{};return S.teamTours[k]}
+  if(!S.tourney||!Array.isArray(S.tourney.games))S.tourney={games:[],plan:{}};S.tourney.plan=S.tourney.plan||{};return S.tourney};
 const tGames=()=>[...TOUR().games].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
 function tMap(p,skip){const m=dayTotals(p),pl=TOUR().plan;
   TOUR().games.forEach(g=>{if(g.id===skip)return;const n=+((pl[g.id]||{})[p.id])||0;if(n>0)m[g.date]=(m[g.date]||0)+n});return m}
@@ -311,8 +312,8 @@ function tAvail(p,g){
   return {n:Math.max(0,n),why};
 }
 function tourPane(){
-  const G=tGames(),pl=TOUR().plan,ps=S.pitchers;
-  const staff=ps.map(x=>{const s=status(x);return `<tr><td>${esc(x.name)}</td><td>${x.band}</td><td>${x.role==='reliever'?'RP':'SP'}</td><td style="color:${s.c==='g'?'var(--go)':s.c==='y'?'var(--amb)':'var(--red)'};font-weight:700">${esc(s.h)}</td></tr>`}).join('');
+  const G=tGames(),pl=TOUR().plan,ps=tPitchers(),team=S.tab==='team';
+  const staff=ps.map(x=>{const s=status(x);return `<tr><td>${esc(x.name)}${x.fam?`<div class="note" style="margin:0">${esc(x.fam)}</div>`:''}</td><td>${x.band}</td><td>${x.role==='reliever'?'RP':'SP'}</td><td style="color:${s.c==='g'?'var(--go)':s.c==='y'?'var(--amb)':'var(--red)'};font-weight:700">${esc(s.h)}</td></tr>`}).join('');
   const games=G.map(g=>{const rows=ps.map(x=>{const a=tAvail(x,g),v=(pl[g.id]||{})[x.id]||'',over=+v>a.n;
       return `<div class="tp"><div><b>${esc(x.name)}</b> <span class="note" style="margin:0">${x.band} · ${x.role==='reliever'?'RP':'SP'}</span>
         <div class="note" style="margin-top:2px;${over?'color:#ff9a92;font-weight:700':''}">${over?`Over his limit of ${a.n}. `:''}${esc(a.why)}</div></div>
@@ -321,8 +322,8 @@ function tourPane(){
     const tot=ps.reduce((s,x)=>s+(+((pl[g.id]||{})[x.id])||0),0);
     return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">${esc(g.label||'Game')}</h3><button class="btn sm line" data-tdel="${g.id}" style="flex:none">Remove</button></div>
       <p class="note" style="margin:2px 0 10px">${nice(g.date).replace(/^./,c=>c.toUpperCase())}${g.time?' · '+esc(g.time):''}${tot?` · ${tot} pitches planned`:''}</p>${rows}</div>`}).join('');
-  return `<div class="panel" style="margin-top:0"><h3>Tournament planner</h3><p style="margin:0;color:#d6dcd9">Add the weekend's games. For every game, the app shows who can pitch and how many pitches he can throw. Type a planned count and every later game updates to match. It uses Pitch Smart rest rules, Pordl targets and the Pordl day-after rule (40 max the day after, 90 over two days).</p></div>
-   <div class="panel"><h3>Staff today</h3><div class="scroll"><table><tr><th>Pitcher</th><th>Ages</th><th>Role</th><th>Today</th></tr>${staff}</table></div><p class="note">Coaching a team? Add every pitcher on your staff under Pitchers and plan the whole weekend here.</p></div>
+  return `<div class="panel" style="${team?'':'margin-top:0'}"><h3>Tournament planner</h3><p style="margin:0;color:#d6dcd9">Add the weekend's games. For every game, the app shows who can pitch and how many pitches he can throw. Type a planned count and every later game updates to match. It uses Pitch Smart rest rules, Pordl targets and the Pordl day-after rule (40 max the day after, 90 over two days).</p></div>
+   <div class="panel"><h3>Staff today</h3><div class="scroll"><table><tr><th>Pitcher</th><th>Ages</th><th>Role</th><th>Today</th></tr>${staff}</table></div>${team?'':'<p class="note">Coaching a team? Open the Team tab to link your families and plan for the whole staff.</p>'}</div>
    <form class="form panel" id="fTour"><h3 style="margin:0">Add a game</h3>
     <div class="two"><div><label for="tD">Date</label><input type="date" id="tD" value="${esc(G.length?G[G.length-1].date:TODAY)}" min="${TODAY}"></div><div><label for="tT">Time (optional)</label><input type="time" id="tT"></div></div>
     <div><label for="tL">Game</label><input id="tL" placeholder="e.g. Pool play vs. Rangers"></div><button class="btn" type="submit">Add game</button></form>
@@ -334,9 +335,51 @@ document.addEventListener('submit',e=>{if(e.target.id!=='fTour')return;e.prevent
   TOUR().games.push({id:uid(),date:d,time:$('tT').value||'',label:$('tL').value.trim().slice(0,60)||'Game '+(TOUR().games.length+1)});render();toast('Game added')},true);
 document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!S)return;
   if(b.dataset.tdel){const t=TOUR();t.games=t.games.filter(g=>g.id!==b.dataset.tdel);delete t.plan[b.dataset.tdel];render();toast('Game removed')}
-  else if(b.id==='tClear'){S.tourney={games:[],plan:{}};render();toast('Tournament cleared')}});
+  else if(b.id==='tClear'){const t=TOUR();t.games=[];t.plan={};render();toast('Tournament cleared')}});
 document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.tp||!S)return;const [g,pid]=t.dataset.tp.split('|'),n=parseInt(t.value,10),pl=TOUR().plan;
   pl[g]=pl[g]||{};if(n>0&&n<=200)pl[g][pid]=n;else delete pl[g][pid];const y=scrollY;render();scrollTo(0,y)});
+/* ---------- Teams (coach accounts) ---------- */
+let TEAMS=null,TCTX=null,ROSTER={},TBUSY=false;
+const normP=x=>{x.role=x.role||'starter';x.season=['off','pre','build'].includes(x.season)?'ramp':(x.season||'in');x.checks=x.checks||{};x.offs=x.offs||[];x.outings=x.outings||[];x.velo=x.velo||[];x.teams=x.teams||[];x.band=RULES[x.band]?x.band:'13-14';return x};
+const tPitchers=()=>S.tab==='team'&&TCTX?(ROSTER[TCTX]||[]):S.pitchers;
+const rpcErr=e=>String((e&&(e.message||e.details))||'Something went wrong').slice(0,90);
+async function loadTeams(){if(DEMO||!sb)return;const {data,error}=await sb.rpc('my_teams');TEAMS=error?[]:(data||[]);if(error)toast('Couldn\'t load teams: '+rpcErr(error));if(S&&S.tab==='team')render()}
+async function loadRoster(id){const {data,error}=await sb.rpc('team_roster',{tid:id});if(error){toast(rpcErr(error));return}
+  ROSTER[id]=[];(data||[]).forEach(f=>(f.pitchers||[]).forEach(x=>{const q=normP(JSON.parse(JSON.stringify(x)));q.id=f.user_id+':'+x.id;q.fam=f.email||'';q.uid=f.user_id;ROSTER[id].push(q)}));
+  if(S.tab==='team'&&TCTX===id)render()}
+function teamPane(){
+  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Teams</h3><p style="margin:0;color:#d6dcd9">Coaches: create a team and share the code. Families join with it and every pitcher's pitch counts, rest and arm status show up on your team dashboard automatically. Then plan tournament weekends for the whole staff.</p><button class="btn" id="leaveDemo" style="margin-top:12px">Create a free account</button></div>`;
+  if(TEAMS===null)return '<p class="note">Loading teams…</p>';
+  const T=TEAMS.find(t=>t.id===TCTX&&t.role==='coach');
+  if(T){const R=ROSTER[T.id];
+    const fams=R?[...new Map(R.map(x=>[x.uid,x.fam])).entries()]:[];
+    return `<button class="btn sm line" id="tBack">← All teams</button>
+     <div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">${esc(T.name)}</h3><button class="btn sm line" id="tRefresh" style="flex:none">Refresh</button></div>
+     <p class="note" style="margin-top:4px">Join code <b style="color:var(--or);font-size:16px;letter-spacing:1px">${esc(T.code)}</b> · ${R?R.length:'…'} pitcher${R&&R.length===1?'':'s'} shared. Families' pitch counts update here as they log them.</p></div>
+     ${!R?'<p class="note">Loading roster…</p>':!R.length?'<div class="panel"><p style="margin:0;color:#d6dcd9">No pitchers yet. Send families the join code: they open the Team tab, enter it and pick which pitcher to share.</p></div>':tourPane()}
+     ${fams.length?`<div class="panel"><h3>Families</h3>${fams.map(([u,e])=>`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:1px solid var(--line)"><span>${esc(e)}</span><button class="btn sm line" data-tkick="${esc(u)}" style="flex:none">Remove</button></div>`).join('')}</div>`:''}`}
+  const coach=TEAMS.filter(t=>t.role==='coach'),mem=TEAMS.filter(t=>t.role==='member');
+  return `<div class="panel" style="margin-top:0"><h3>Join your team</h3><p style="margin:0 0 10px;color:#d6dcd9">Got a code from his coach? Enter it to share his pitch counts and arm status with the coaching staff. They can see it, but they can't change anything.</p>
+    <div class="form"><div><label for="tCode">Team code</label><input id="tCode" placeholder="e.g. A1B2C3" autocapitalize="characters" maxlength="10"></div>
+    <div><span class="lab">Share which pitcher?</span><div class="seg">${S.pitchers.map(x=>`<label class="chip" style="display:inline-flex;align-items:center;gap:6px"><input type="checkbox" class="tShare" value="${esc(x.id)}" ${S.pitchers.length===1?'checked':''} style="width:18px;height:18px;min-height:0">${esc(x.name)}</label>`).join('')}</div></div>
+    <button class="btn" id="tJoin" type="button">Join team</button></div></div>
+   ${mem.map(t=>`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">${esc(t.name)}</h3><button class="btn sm line" data-tleave="${esc(t.id)}" style="flex:none">Leave</button></div><p class="note">Sharing: ${esc(S.pitchers.filter(x=>(t.pitcher_ids||[]).includes(x.id)).map(x=>x.name).join(', ')||'no pitchers')}. To change it, enter the code again with different pitchers checked.</p></div>`).join('')}
+   <div class="panel"><h3>Coach a team</h3><p style="margin:0 0 10px;color:#d6dcd9">Create a team and get a code to send to families. You'll see every shared pitcher's status and can plan tournament weekends for the whole staff.</p>
+    <div class="form"><div><label for="tName">Team name</label><input id="tName" placeholder="e.g. Desert Storm 14U" maxlength="60"></div><button class="btn" id="tCreate" type="button">Create team</button></div></div>
+   ${coach.map(t=>`<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">${esc(t.name)}</h3><button class="btn sm" data-topen="${esc(t.id)}" style="flex:none">Open</button></div><p class="note">Code <b style="color:var(--or)">${esc(t.code)}</b> · ${t.members} famil${t.members===1?'y':'ies'} joined</p><button class="link" data-tdelteam="${esc(t.id)}" style="color:#ff9a92;margin-top:6px">Delete team</button></div>`).join('')}`;
+}
+document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!S||DEMO||TBUSY)return;
+  const run=async(fn,args,ok)=>{TBUSY=true;b.disabled=true;const {data,error}=await sb.rpc(fn,args);TBUSY=false;b.disabled=false;if(error){toast(rpcErr(error));return null}if(ok)toast(typeof ok==='function'?ok(data):ok);return data||true};
+  if(b.id==='tCreate'){const n=$('tName').value.trim();if(!n){toast('Name your team');return}const d=await run('create_team',{team_name:n},d=>`Team created. Code: ${d.code}`);if(d){TEAMS=null;TCTX=d.id;loadTeams();loadRoster(d.id)}}
+  else if(b.id==='tJoin'){const c=$('tCode').value.trim(),ids=[...document.querySelectorAll('.tShare:checked')].map(x=>x.value);if(!c){toast('Enter the team code');return}if(!ids.length){toast('Pick at least one pitcher');return}
+    const d=await run('join_team',{team_code:c,pids:ids},d=>`Joined ${d.name}`);if(d){TEAMS=null;loadTeams()}}
+  else if(b.dataset.topen){TCTX=b.dataset.topen;render();loadRoster(TCTX)}
+  else if(b.id==='tBack'){TCTX=null;render()}
+  else if(b.id==='tRefresh'){loadRoster(TCTX);toast('Refreshing')}
+  else if(b.dataset.tleave){if(!confirm('Leave this team? The coach will stop seeing your pitcher.'))return;if(await run('leave_team',{tid:b.dataset.tleave},'Left the team')){TEAMS=null;loadTeams()}}
+  else if(b.dataset.tkick){if(!confirm('Remove this family from the team?'))return;if(await run('remove_member',{tid:TCTX,uid:b.dataset.tkick},'Family removed')){loadRoster(TCTX);loadTeams()}}
+  else if(b.dataset.tdelteam){if(!confirm('Delete this team? Families stay in the app but will no longer be linked.'))return;if(await run('delete_team',{tid:b.dataset.tdelteam},'Team deleted')){TEAMS=null;loadTeams()}}
+});
 
 const teamsRecent=p=>new Set(p.outings.filter(o=>o.type==='game'&&o.team&&diff(o.date,TODAY)<14&&diff(o.date,TODAY)>=0).map(o=>o.team)).size;
 const soreToday=(p,d)=>p.checks&&p.checks[d]==='sore';
@@ -425,10 +468,10 @@ function render(){
   const teams=new Set(p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<14&&o.team).map(o=>o.team));
   $('stats').innerHTML=`<div class="st"><b>${wk}</b><span>Game pitches, 7 days</span></div><div class="st"><b>${st.ip.toFixed(1)}</b><span>Innings, 12 months</span><div class="meter"><i style="width:${Math.min(100,st.ip)}%"></i></div></div><div class="st"><b>${teams.size}</b><span>Teams pitched for, 14 days</span></div>`;
   if(S.tab==='queue'&&!ADMIN)S.tab='today';
-  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['tour','Tournament'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
+  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['tour','Tournament'],['team','Team'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
   $('tabs').innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${n}</button>`).join('');
-  $('pane').innerHTML=({today:logPane,tour:tourPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
-  if(S.tab==='video')loadMyVideos();if(S.tab==='queue')loadQueue();
+  $('pane').innerHTML=({today:logPane,tour:tourPane,team:teamPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
+  if(S.tab==='video')loadMyVideos();if(S.tab==='team'&&TEAMS===null&&!DEMO)loadTeams();if(S.tab==='queue')loadQueue();
   if(S.tab==='velo')drawVelo();
 }
 function logPane(p){
@@ -599,7 +642,7 @@ let oType='game',oFeel='normal';
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b||!S)return;const p=P();
   if(b.dataset.who){S.cur=b.dataset.who;render()}
-  else if(b.dataset.tab||b.dataset.tabGo){S.tab=b.dataset.tab||b.dataset.tabGo;oType='game';oFeel='normal';render()}
+  else if(b.dataset.tab||b.dataset.tabGo){S.tab=b.dataset.tab||b.dataset.tabGo;if(S.tab!=='team')TCTX=null;oType='game';oFeel='normal';render()}
   else if(b.dataset.otype){oType=b.dataset.otype;for(const c of document.querySelectorAll('[data-otype]'))c.setAttribute('aria-pressed',c===b);$('oIP').disabled=oType!=='game';$('oTeam').disabled=oType!=='game';$('oP').placeholder=oType==='warm'?'Warm-up pitches (optional)':'e.g. 45'}
   else if(b.dataset.feel){oFeel=b.dataset.feel;for(const c of document.querySelectorAll('[data-feel]'))c.setAttribute('aria-pressed',c===b)}
   else if(b.dataset.chk){p.checks[TODAY]=p.checks[TODAY]===b.dataset.chk?'':b.dataset.chk;render();toast(b.dataset.chk==='pain'?'Pain logged. Shut it down and get him checked.':'Saved')}
