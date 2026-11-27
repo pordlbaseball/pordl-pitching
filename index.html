@@ -56,9 +56,12 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .panel h3{font-size:18px;margin-bottom:10px}
 .plan{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
 .big{font:900 40px Archivo,sans-serif;color:var(--or);line-height:1;white-space:nowrap;text-align:right}
+@media (max-width:480px){.plan{grid-template-columns:minmax(0,1fr);gap:10px}.plan .big{text-align:left}}
 .big small{display:block;font:600 12px Inter,sans-serif;color:var(--mute);margin-top:4px}
 label,.lab{display:block;font-size:13px;font-weight:700;color:var(--mute);margin:0 0 6px}
 input,select{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;min-height:46px;padding:0 12px}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;max-width:100%;text-align:left;line-height:44px}
+input::-webkit-date-and-time-value{text-align:left}
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
 .st{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -325,7 +328,7 @@ function tourPane(){
   return `<div class="panel" style="${team?'':'margin-top:0'}"><h3>Tournament planner</h3><p style="margin:0;color:#d6dcd9">Add the weekend's games. For every game, the app shows who can pitch and how many pitches he can throw. Type a planned count and every later game updates to match. It uses Pitch Smart rest rules, Pordl targets and the Pordl day-after rule (40 max the day after, 90 over two days).</p></div>
    <div class="panel"><h3>Staff today</h3><div class="scroll"><table><tr><th>Pitcher</th><th>Ages</th><th>Role</th><th>Today</th></tr>${staff}</table></div>${team?'':'<p class="note">Coaching a team? Open the Team tab to link your families and plan for the whole staff.</p>'}</div>
    <form class="form panel" id="fTour"><h3 style="margin:0">Add a game</h3>
-    <div class="two"><div><label for="tD">Date</label><input type="date" id="tD" value="${esc(G.length?G[G.length-1].date:TODAY)}" min="${TODAY}"></div><div><label for="tT">Time (optional)</label><input type="time" id="tT"></div></div>
+    <div class="form"><div><label for="tD">Date</label><input type="date" id="tD" value="${esc(G.length?G[G.length-1].date:TODAY)}" min="${TODAY}"></div><div><label for="tT">Time (optional)</label><input type="time" id="tT"></div></div>
     <div><label for="tL">Game</label><input id="tL" placeholder="e.g. Pool play vs. Rangers"></div><button class="btn" type="submit">Add game</button></form>
    ${G.length?games+'<button class="btn line" id="tClear" style="margin-top:12px">Clear tournament</button>':'<p class="note" style="margin-top:12px">No games yet. Add the first game above.</p>'}
    <p class="note">Plans are a guide. If he's sore or his arm doesn't feel right, he doesn't pitch, whatever the plan says.</p>`;
@@ -510,7 +513,7 @@ function render(){
 }
 function logPane(p){
   return `<form class="form" id="fOut">
-    <div class="two"><div><label for="oDate">Date</label><input type="date" id="oDate" value="${TODAY}" max="${TODAY}"></div>
+    <div class="form"><div><label for="oDate">Date</label><input type="date" id="oDate" value="${TODAY}" max="${TODAY}"></div>
     <div><span class="lab">Type</span><div class="seg"><button type="button" class="chip" data-otype="game" aria-pressed="true">Game</button><button type="button" class="chip" data-otype="pen" aria-pressed="false">Bullpen</button>${p.role==='reliever'?'<button type="button" class="chip" data-otype="warm" aria-pressed="false">Got hot, didn\'t pitch</button>':''}</div></div></div>
     <div><label for="oTeam">Team</label><select id="oTeam">${p.teams.map(t=>`<option>${esc(t)}</option>`).join('')}<option value="">Other</option></select></div>
     <div class="two"><div><label for="oP">Pitches</label><input id="oP" type="number" inputmode="numeric" min="1" max="200" placeholder="e.g. 45"></div>
