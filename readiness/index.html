@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free Recruiting Readiness Check · Pordl</title>
+<meta name="description" content="Two minutes. Find out which college levels fit your son right now, what's holding him back, and what to do next. From Marcus McBeth, former pro player and Cardinals scout.">
+<meta property="og:title" content="Free Recruiting Readiness Check · Pordl">
+<meta property="og:description" content="Which college levels fit your son right now, and what's holding him back. Free, two minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#0d0f0e;--panel:#161a18;--panel2:#1d2220;--line:#2c3330;--ink:#f4f6f5;--soft:#d6dcd9;--mute:#a3ada8;--or:#ff6a13;--go:#2fd16f;--amb:#ffc531;--red:#ff5a4e}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;overflow-x:clip}
+body{background:var(--bg);color:var(--soft);font:16px/1.55 Inter,system-ui,sans-serif}
+h1,h2,h3{font-family:Archivo,Inter,sans-serif;color:var(--ink);line-height:1.1;letter-spacing:-.02em;margin:0}
+.wrap{max-width:640px;margin:0 auto;padding:0 16px 48px}
+header{display:flex;align-items:center;gap:10px;padding:16px 0 4px}
+.mark{width:34px;height:34px;border-radius:50%;background:var(--or);color:#140800;display:grid;place-items:center;font:900 17px Archivo,sans-serif;flex:none}
+header b{display:block;font:900 20px Archivo,sans-serif;color:var(--ink)}
+header small{display:block;color:var(--mute);font-size:12px;font-weight:600}
+.hero{margin:18px 0 10px}
+.hero h1{font-size:clamp(28px,7.5vw,40px);font-weight:900}
+.hero p{margin:10px 0 0;font-size:17px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;margin:14px 0}
+.panel h2{font-size:20px;margin-bottom:4px}
+.form{display:grid;gap:14px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+label,.lab{display:block;font-weight:600;font-size:14px;color:var(--ink);margin-bottom:6px}
+.hint{color:var(--mute);font-size:13px;font-weight:500;margin-top:4px}
+input,select{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(--panel2);border:1.5px solid var(--line);border-radius:10px;min-height:46px;padding:0 12px}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--panel2);color:var(--ink);border-radius:999px;padding:9px 14px;font:600 14px Inter,sans-serif;cursor:pointer;min-height:42px}
+.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;border:0;border-radius:12px;background:var(--or);color:#140800;font:700 16px Inter,sans-serif;cursor:pointer;text-decoration:none}
+.btn.line{background:none;border:1.5px solid var(--line);color:var(--ink)}
+.btn[disabled]{opacity:.6}
+.err{color:#ff9a92;font-weight:600;font-size:14px;margin:0;min-height:1px}
+.note{color:var(--mute);font-size:13px;margin:8px 0 0}
+.steps{display:flex;gap:6px;margin:8px 0 0}
+.steps i{flex:1;height:5px;border-radius:5px;background:var(--line)}
+.steps i.on{background:var(--or)}
+.ladder{display:grid;gap:8px;margin:12px 0}
+.rung{display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel2)}
+.rung b{color:var(--ink);font:800 17px Archivo,sans-serif}
+.tag{font:700 12px Inter,sans-serif;border-radius:999px;padding:5px 10px;white-space:nowrap}
+.fit{background:#123b24;color:#8df0b2}.reach{background:#3b3212;color:#ffe08a}.far{background:#2a2f2d;color:var(--mute)}
+.gap{border-left:3px solid var(--or);padding:4px 0 4px 12px;margin:10px 0}
+.gap b{color:var(--ink)}
+ul{padding-left:20px;margin:8px 0}
+li{margin:6px 0}
+.by{color:var(--mute);font-size:13px;margin-top:20px;text-align:center}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header><div class="mark">P</div><div><b>Pordl</b><small>Truth in Recruiting</small></div></header>
+
+<div class="hero" id="hero"><h1>Is he ready to be recruited?</h1>
+<p>Two minutes. See which college levels fit your son right now, what's holding him back, and what to do next. Free, from <strong>Marcus McBeth</strong>, former pro player and St. Louis Cardinals scout.</p></div>
+
+<form id="f" novalidate>
+<!-- step 1 -->
+<div class="panel" id="s1">
+ <div class="steps"><i class="on"></i><i></i><i></i></div>
+ <h2 style="margin-top:12px">The basics</h2>
+ <div class="form">
+  <div><label for="grad">High school grad year</label><select id="grad" required></select></div>
+  <div><span class="lab">Main position</span><div class="seg" id="pos">
+   <button type="button" class="chip" data-pos="P">Pitcher</button><button type="button" class="chip" data-pos="C">Catcher</button><button type="button" class="chip" data-pos="IF">Infield</button><button type="button" class="chip" data-pos="OF">Outfield</button></div></div>
+  <div><span class="lab">Throws</span><div class="seg" id="thr"><button type="button" class="chip" data-thr="R" aria-pressed="true">Right</button><button type="button" class="chip" data-thr="L">Left</button></div></div>
+  <div class="two"><div><label for="ht">Height</label><input id="ht" placeholder="e.g. 5'11&quot;" maxlength="8" autocomplete="off"></div><div><label for="wt">Weight (lbs)</label><input id="wt" inputmode="numeric" maxlength="3" placeholder="e.g. 170"></div></div>
+  <p class="err" id="e1"></p>
+  <button class="btn" type="button" id="n1">Next</button>
+ </div>
+</div>
+
+<!-- step 2 -->
+<div class="panel" id="s2" hidden>
+ <div class="steps"><i class="on"></i><i class="on"></i><i></i></div>
+ <h2 style="margin-top:12px">His numbers</h2>
+ <p class="note" style="margin-top:0">Use real, measured numbers. Skip anything you don't know.</p>
+ <div class="form" style="margin-top:12px">
+  <div id="fP"><label for="fb">Fastball, top velo (mph)</label><input id="fb" inputmode="decimal" placeholder="e.g. 84"></div>
+  <div id="fC"><div class="two"><div><label for="pop">Pop time (sec)</label><input id="pop" inputmode="decimal" placeholder="e.g. 2.05"></div><div><label for="cv">Catcher velo (mph)</label><input id="cv" inputmode="decimal" placeholder="e.g. 76"></div></div></div>
+  <div id="fIF"><label for="ifv">Infield velo (mph)</label><input id="ifv" inputmode="decimal" placeholder="e.g. 82"></div>
+  <div id="fOF"><label for="ofv">Outfield velo (mph)</label><input id="ofv" inputmode="decimal" placeholder="e.g. 84"></div>
+  <div id="fH"><div class="two"><div><label for="ev">Max exit velo (mph)</label><input id="ev" inputmode="decimal" placeholder="e.g. 90"></div><div><label for="sixty">60-yard time (sec)</label><input id="sixty" inputmode="decimal" placeholder="e.g. 7.05"></div></div></div>
+  <div class="two"><div><label for="gpa">GPA (unweighted)</label><input id="gpa" inputmode="decimal" placeholder="e.g. 3.4"></div>
+   <div><label for="goal">Level he wants</label><select id="goal"><option value="">Not sure yet</option><option>D1</option><option>D2</option><option>NAIA</option><option>D3</option><option>JUCO</option></select></div></div>
+  <p class="err" id="e2"></p>
+  <button class="btn" type="button" id="n2">Next</button>
+  <button class="btn line" type="button" id="b2">Back</button>
+ </div>
+</div>
+
+<!-- step 3 -->
+<div class="panel" id="s3" hidden>
+ <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i></div>
+ <h2 style="margin-top:12px">Where should we send his results?</h2>
+ <p class="note" style="margin-top:0">You'll see them on the next screen, and Marcus gets a copy.</p>
+ <div class="form" style="margin-top:12px">
+  <div><label for="pn">Player first name</label><input id="pn" maxlength="40" autocomplete="off"></div>
+  <div class="two"><div><label for="parent">Parent name</label><input id="parent" maxlength="60" autocomplete="name"></div><div><label for="phone">Parent phone</label><input id="phone" type="tel" inputmode="tel" maxlength="25" autocomplete="tel"></div></div>
+  <div><label for="email">Parent email</label><input id="email" type="email" maxlength="120" autocomplete="email"></div>
+  <p class="err" id="e3"></p>
+  <button class="btn" type="submit" id="go">See his results</button>
+  <button class="btn line" type="button" id="b3">Back</button>
+  <p class="note">We only use this to send his results and to follow up about recruiting. No spam, ever.</p>
+ </div>
+</div>
+</form>
+
+<div id="res" hidden></div>
+
+<p class="by">Pordl · Truth in Recruiting · <a href="https://www.pordl.ai" style="color:inherit">pordl.ai</a><br>Estimates based on typical recruits at each level. Every program recruits differently.</p>
+</div>
+
+<script>
+/* ===== Benchmarks: what a typical committed recruit shows at each level, by senior year.
+   Marcus: these are the numbers to check. Edit them here. ===== */
+const LEVELS=['D1','D2','NAIA','JUCO','D3'];
+const BENCH={
+  fb:  {D1:87,D2:84,NAIA:82,JUCO:81,D3:80},   // RHP top fastball, mph (LHP: 2 mph less)
+  ev:  {D1:95,D2:90,NAIA:88,JUCO:88,D3:85},   // max exit velo, mph
+  sixty:{D1:6.85,D2:7.0,NAIA:7.1,JUCO:7.1,D3:7.2}, // 60 time, sec (lower is better)
+  ifv: {D1:85,D2:82,NAIA:80,JUCO:80,D3:78},
+  ofv: {D1:88,D2:84,NAIA:82,JUCO:82,D3:80},
+  pop: {D1:2.00,D2:2.08,NAIA:2.12,JUCO:2.12,D3:2.18},
+  cv:  {D1:78,D2:75,NAIA:73,JUCO:73,D3:71}
+};
+const GROW={fb:2,ev:3,sixty:-.08,ifv:2,ofv:2,pop:-.04,cv:2}; // typical gain per year of high school left
+const LOWER={sixty:1,pop:1};
+const NAMES={fb:'fastball velo',ev:'exit velo',sixty:'60 time',ifv:'infield arm',ofv:'outfield arm',pop:'pop time',cv:'catcher arm'};
+const UNIT={fb:' mph',ev:' mph',sixty:' sec',ifv:' mph',ofv:' mph',pop:' sec',cv:' mph'};
+const TOOLS={P:['fb'],C:['pop','cv','ev','sixty'],IF:['ifv','ev','sixty'],OF:['ofv','ev','sixty']};
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const now=new Date(),SENIOR=now.getFullYear()+(now.getMonth()>=7?1:0); // class of the current seniors
+$('grad').innerHTML='<option value="">Choose…</option>'+[0,1,2,3,4,5].map(i=>`<option>${SENIOR+i}</option>`).join('');
+let POS='',THR='R';
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.pos){POS=b.dataset.pos;document.querySelectorAll('[data-pos]').forEach(x=>x.setAttribute('aria-pressed',x===b))}
+  if(b.dataset.thr){THR=b.dataset.thr;document.querySelectorAll('[data-thr]').forEach(x=>x.setAttribute('aria-pressed',x===b))}});
+const show=n=>{['s1','s2','s3'].forEach((s,i)=>$(s).hidden=i!==n-1);$('hero').hidden=n!==1;scrollTo({top:0,behavior:'smooth'})};
+$('n1').onclick=()=>{$('e1').textContent='';if(!$('grad').value){$('e1').textContent='Choose his grad year.';return}if(!POS){$('e1').textContent='Pick his main position.';return}
+  $('fP').hidden=POS!=='P';$('fC').hidden=POS!=='C';$('fIF').hidden=POS!=='IF';$('fOF').hidden=POS!=='OF';$('fH').hidden=POS==='P';show(2)};
+$('b2').onclick=()=>show(1);$('b3').onclick=()=>show(2);
+const num=id=>{const v=parseFloat(String($(id).value).replace(/[^0-9.]/g,''));return isFinite(v)?v:null};
+const RANGE={fb:[40,105],ev:[40,125],sixty:[5.8,10],ifv:[40,100],ofv:[40,105],pop:[1.6,3.5],cv:[40,95],gpa:[0,5]};
+const WRAP={fb:'fP',pop:'fC',cv:'fC',ifv:'fIF',ofv:'fOF',ev:'fH',sixty:'fH'};
+function readNums(){const o={};for(const k of Object.keys(RANGE)){if(!$(k)||(WRAP[k]&&$(WRAP[k]).hidden))continue;const v=num(k);if(v===null)continue;const [lo,hi]=RANGE[k];if(v<lo||v>hi)return {bad:k};o[k]=v}return o}
+$('n2').onclick=()=>{$('e2').textContent='';const n=readNums();if(n.bad){$('e2').textContent=`Check his ${n.bad==='gpa'?'GPA':NAMES[n.bad]}. That number looks off.`;return}
+  if(!TOOLS[POS].some(k=>n[k]!=null)){$('e2').textContent='Add at least one measured number so we can compare him.';return}show(3)};
+
+function bench(k,lvl,yearsLeft){let b=BENCH[k][lvl];if(k==='fb'&&THR==='L')b-=2;return b-GROW[k]*Math.min(yearsLeft,3)}
+function meets(k,v,lvl,yl){const b=bench(k,lvl,yl);return LOWER[k]?v<=b:v>=b}
+function evaluate(n,grad){
+  const yl=Math.max(0,grad-SENIOR); // years until senior year
+  const tools=TOOLS[POS].filter(k=>n[k]!=null);
+  const tier=k=>{for(let i=0;i<LEVELS.length;i++)if(meets(k,n[k],LEVELS[i],yl))return i;return LEVELS.length};
+  const tiers=tools.map(k=>({k,t:tier(k)}));
+  let main;if(POS==='P')main=tiers[0].t;else{const s=tiers.map(x=>x.t).sort((a,b)=>a-b);main=s[Math.floor((s.length-1)/2)]}
+  if(n.gpa!=null&&n.gpa<2.3&&main<2)main=2; // NCAA D1/D2 academic minimums
+  const fitLevels=LEVELS.filter((_,i)=>i>=main),reach=main>0?LEVELS[main-1]:null;
+  const target=reach||LEVELS[0];
+  const gaps=tiers.map(x=>{const b=bench(x.k,target,yl);const d=LOWER[x.k]?n[x.k]-b:b-n[x.k];return {k:x.k,v:n[x.k],b,d}}).filter(x=>x.d>0).sort((a,b)=>(b.d/Math.abs(b.b))-(a.d/Math.abs(a.b)));
+  return {yl,main,fitLevels,reach,gaps,tiers};
+}
+const fmt=(k,v)=>k==='sixty'||k==='pop'?v.toFixed(2):Math.round(v);
+function results(n,info,r){
+  const grad=+info.grad,nm=esc(info.pn||'He');
+  const fitTxt=r.main>=LEVELS.length?'Not yet at a college level':r.fitLevels.join(', ');
+  const rung=(l,i)=>{const c=i>=r.main&&r.main<LEVELS.length?'fit':(r.reach===l?'reach':'far');const t=c==='fit'?(r.yl?'On track':'Fits now'):c==='reach'?'Within reach':'Not yet';return `<div class="rung"><b>${l}</b><span class="tag ${c}">${t}</span></div>`};
+  const gapHtml=r.gaps.slice(0,2).map(g=>`<div class="gap"><b>${NAMES[g.k][0].toUpperCase()+NAMES[g.k].slice(1)}:</b> ${fmt(g.k,g.v)}${UNIT[g.k]} now. ${r.reach||'D1'} recruits${r.yl?` on his timeline`:''} are around ${fmt(g.k,g.b)}${UNIT[g.k]}.</div>`).join('');
+  const acad=n.gpa==null?'<div class="gap"><b>Grades:</b> add his GPA in the full Blueprint. Grades open doors at every level, especially D3 and academic schools.</div>':n.gpa<3.0?`<div class="gap"><b>Grades:</b> a ${n.gpa.toFixed(2)} GPA limits his options. Getting above 3.0 opens up most D2, NAIA and D3 programs, and more scholarship money.</div>`:n.gpa>=3.5?`<div class="gap"><b>Grades are a weapon:</b> a ${n.gpa.toFixed(2)} GPA opens academic money and strong D3 and academic D1 programs. Use it.</div>`:'';
+  const timing=r.yl>=2?`Class of ${grad}: there's time. Coaches can start reaching out June 15 after sophomore year. Use the next year to close the gaps above and get measured numbers and film in front of coaches.`:r.yl===1?`Class of ${grad}: this is the window. Coaches are building their ${grad} lists now. He needs film, verified numbers and a target list this year.`:`Class of ${grad}: time is short. Focus on programs that still have spots, especially at the levels that fit him now.`;
+  return `<div class="panel" style="margin-top:18px"><div class="sub" style="color:var(--or);font-weight:700;font-size:13px">READINESS CHECK</div>
+   <h2 style="font-size:26px;margin-top:4px">${nm}${r.yl&&r.main<LEVELS.length?' is on track for':':'} ${esc(fitTxt)}</h2>
+   <p style="margin:8px 0 0">${r.main>=LEVELS.length?`His numbers are still below what most college programs see on his timeline. That's fixable, and the full Blueprint lays out how.`:r.reach?`${r.yl?'For a '+grad+' grad, his numbers are on track for':'His numbers fit'} <b style="color:var(--ink)">${esc(r.fitLevels[0])}</b>${r.yl?'':' right now'}, and <b style="color:var(--ink)">${esc(r.reach)}</b> is within reach if he closes the gap below.`:`His numbers are ${r.yl?'on a D1 track':'at the D1 level'} for his class. Now it's about film, grades and getting in front of the right coaches.`}</p>
+   <div class="ladder">${LEVELS.map(rung).join('')}</div></div>
+   <div class="panel"><h2>What's holding him back</h2>${gapHtml||'<p class="note" style="margin-top:6px">No measurable gaps at the next level. Film and exposure are the next step.</p>'}${acad}</div>
+   <div class="panel"><h2>Timing</h2><p style="margin:6px 0 0">${timing}</p></div>
+   <div class="panel" style="border-color:var(--or)"><div class="sub" style="color:var(--or);font-weight:700;font-size:13px">NEXT STEP</div><h2 style="margin-top:4px">Get the full Pordl Blueprint</h2>
+   <p style="margin:6px 0 12px">This check uses ${r.tiers.length} number${r.tiers.length===1?'':'s'}. The Blueprint is Marcus's full evaluation: every tool, grades, film, a level projection, target schools and his top 3 next steps. Fill out the free form, then decide.</p>
+   <a class="btn" href="https://www.pordl.ai/blueprint">Start the Blueprint</a>
+   <p class="note">Questions? DM <a href="https://www.instagram.com/pordlrecruiting" style="color:var(--or)">@pordlrecruiting</a> on Instagram.</p></div>`;
+}
+const sb=window.supabase?window.supabase.createClient('https://ohcwenpvwjgaaghltlql.supabase.co','sb_publishable_ECRIznw6p33rffna-NXp6w_M4c4GTu7'):null;
+$('f').addEventListener('submit',async e=>{e.preventDefault();const err=$('e3');err.textContent='';
+  const info={grad:$('grad').value,pn:$('pn').value.trim(),parent:$('parent').value.trim(),phone:$('phone').value.trim(),email:$('email').value.trim()};
+  if(!info.pn){err.textContent='Add his first name.';return}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(info.email)){err.textContent='Enter a valid email.';return}
+  if(info.phone.replace(/\D/g,'').length<10){err.textContent='Enter a phone number with area code.';return}
+  const n=readNums(),r=evaluate(n,+info.grad);
+  const fit=r.main>=LEVELS.length?'Below college level for now':r.fitLevels.join('/');
+  const btn=$('go');btn.disabled=true;btn.textContent='Checking…';
+  const payload={player:info.pn,parent:info.parent,email:info.email,phone:info.phone,grad_year:info.grad,position:POS,throws:THR,height:$('ht').value.trim(),weight:$('wt').value.trim(),goal:$('goal').value,
+    numbers:n,fit,reach:r.reach||'',gaps:r.gaps.slice(0,2).map(g=>`${NAMES[g.k]} ${fmt(g.k,g.v)} vs ${fmt(g.k,g.b)}`).join('; ')};
+  if(sb){try{const {error}=await sb.rpc('submit_readiness',{payload});if(error&&/minutes/.test(error.message||'')){}}catch(x){}}
+  $('f').hidden=true;$('hero').hidden=true;$('res').hidden=false;$('res').innerHTML=results(n,info,r);scrollTo({top:0,behavior:'smooth'})});
+</script>
+</body>
+</html>
