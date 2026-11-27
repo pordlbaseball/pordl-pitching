@@ -128,6 +128,7 @@ textarea{width:100%;font:16px Inter,sans-serif;color:var(--ink);background:var(-
 .by{color:var(--mute);font-size:12px;margin-top:12px}
 @media(max-width:420px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}.st b{font-size:20px}.strip{gap:2px}.day{font-size:10px}}
 @media(prefers-reduced-motion:no-preference){.status{transition:background .3s}}
+.tp{display:grid;grid-template-columns:minmax(0,1fr) auto 84px;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}.tp input{min-height:42px;text-align:center}.tpn{font:900 26px Archivo,sans-serif;color:var(--or);text-align:right;line-height:1}.tpn small{display:block;font:600 11px Inter,sans-serif;color:var(--mute)}.tpn.no{color:var(--red);font-size:20px}
 </style>
 </head>
 <body>
@@ -177,7 +178,8 @@ function sample(){
     outings:[
       {id:uid(),date:add(TODAY,-4),type:'game',team:'Travel team',p:31,ip:'2.0',feel:'normal'},
       {id:uid(),date:add(TODAY,-1),type:'game',team:'Travel team',p:18,ip:'1.0',feel:'great'}],
-    velo:[[add(TODAY,-40),68,65],[add(TODAY,-12),70,66]],next:add(TODAY,1)}]};
+    velo:[[add(TODAY,-40),68,65],[add(TODAY,-12),70,66]],next:add(TODAY,1)}],
+   tourney:{games:[{id:'g1',date:add(TODAY,1),time:'09:00',label:'Pool play vs. Rangers'},{id:'g2',date:add(TODAY,1),time:'15:00',label:'Pool play vs. Hawks'},{id:'g3',date:add(TODAY,2),time:'11:00',label:'Bracket: Quarterfinal'}],plan:{g1:{[a]:55}}}};
 }
 let S=null,USER=null,DEMO=false,saveT=null,ADMIN=false,WAITING=0,TIER='free',SUB=null,MYREVIEWS=0;
 const LINKS={program:'https://buy.stripe.com/6oU7sL0so0UJgM8eDhdEs1n',pro:'https://buy.stripe.com/14AbJ15MI9rf2Vi0MrdEs1m',founding:'https://buy.stripe.com/fZu00j7UQ5aZgM8an1dEs1l'},PORTAL='https://billing.stripe.com/p/login/5kQ7sL5MIgTH9jGdzddEs00';
@@ -287,6 +289,54 @@ function plan(p,next){
   return {n:lim,t:lim>=cap?`Any count up to ${cap} (Pordl target) still leaves him eligible ${nice(next)}.`:`Keep him to ${lim} pitches or fewer today and he can pitch again ${nice(next)}.`};
 }
 
+/* ---------- Tournament planner ---------- */
+const TOUR=()=>{if(!S.tourney||!Array.isArray(S.tourney.games))S.tourney={games:[],plan:{}};S.tourney.plan=S.tourney.plan||{};return S.tourney};
+const tGames=()=>[...TOUR().games].sort((a,b)=>(a.date+(a.time||'')).localeCompare(b.date+(b.time||'')));
+function tMap(p,skip){const m=dayTotals(p),pl=TOUR().plan;
+  TOUR().games.forEach(g=>{if(g.id===skip)return;const n=+((pl[g.id]||{})[p.id])||0;if(n>0)m[g.date]=(m[g.date]||0)+n});return m}
+function tAvail(p,g){
+  const st=status(p),R=RULES[p.band],T=TARGET[p.band],d=g.date;
+  if(st.pain)return {n:0,why:'Pain logged. No throwing until a doctor or athletic trainer clears him.'};
+  if(p.season==='shut')return {n:0,why:'Shut down for the off-season.'};
+  if(p.season==='ramp'&&!rampDay(p,d).done)return {n:0,why:'Still in his ramp-up. Not game-ready yet.'};
+  const m=tMap(p,g.id);
+  if(m[d])return {n:0,why:'Already pitching in another game this day. One game per day.'};
+  for(const [x,n] of Object.entries(m)){if(x>=d)continue;const r=restFor(p.band,n);if(diff(x,d)<=r)return {n:0,why:`${n} pitches ${nice(x)} needs ${r} day${r===1?'':'s'} of rest. Eligible ${nice(add(x,r+1))}.`}}
+  const a=add(d,-1),b=add(d,-2),c=add(d,1),e=add(d,2);
+  if((m[a]&&m[b])||(m[a]&&m[c])||(m[c]&&m[e]))return {n:0,why:'That would be three days in a row. Never three straight days.'};
+  let n=T,why=`Pordl target for ages ${p.band}. Pitch Smart max is ${R.max}.`;
+  if(m[a]){const k=Math.max(0,Math.min(40,90-m[a]));if(k<n){n=k;why=`${a>=TODAY?'Throwing':'Threw'} ${m[a]} ${nice(a)}. Day-after rule: 40 max, 90 over two days.`}}
+  for(const [y,k] of Object.entries(m)){if(y<=d)continue;const gap=diff(d,y)-1;if(gap>=4)continue;let lim=R.t[gap];if(gap===0)lim=Math.min(lim,Math.max(0,90-k));
+    if(lim<n){n=lim;why=`Keeps him eligible for his planned ${k} pitches ${nice(y)}.`}}
+  return {n:Math.max(0,n),why};
+}
+function tourPane(){
+  const G=tGames(),pl=TOUR().plan,ps=S.pitchers;
+  const staff=ps.map(x=>{const s=status(x);return `<tr><td>${esc(x.name)}</td><td>${x.band}</td><td>${x.role==='reliever'?'RP':'SP'}</td><td style="color:${s.c==='g'?'var(--go)':s.c==='y'?'var(--amb)':'var(--red)'};font-weight:700">${esc(s.h)}</td></tr>`}).join('');
+  const games=G.map(g=>{const rows=ps.map(x=>{const a=tAvail(x,g),v=(pl[g.id]||{})[x.id]||'',over=+v>a.n;
+      return `<div class="tp"><div><b>${esc(x.name)}</b> <span class="note" style="margin:0">${x.band} · ${x.role==='reliever'?'RP':'SP'}</span>
+        <div class="note" style="margin-top:2px;${over?'color:#ff9a92;font-weight:700':''}">${over?`Over his limit of ${a.n}. `:''}${esc(a.why)}</div></div>
+        <div class="tpn ${a.n?'':'no'}">${a.n?a.n:'Out'}<small>${a.n?'max':'not available'}</small></div>
+        <input type="number" inputmode="numeric" min="0" max="200" placeholder="Plan" aria-label="Planned pitches for ${esc(x.name)}" data-tp="${g.id}|${x.id}" value="${esc(v)}" ${a.n||v?'':'disabled'}></div>`}).join('');
+    const tot=ps.reduce((s,x)=>s+(+((pl[g.id]||{})[x.id])||0),0);
+    return `<div class="panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3 style="margin:0">${esc(g.label||'Game')}</h3><button class="btn sm line" data-tdel="${g.id}" style="flex:none">Remove</button></div>
+      <p class="note" style="margin:2px 0 10px">${nice(g.date).replace(/^./,c=>c.toUpperCase())}${g.time?' · '+esc(g.time):''}${tot?` · ${tot} pitches planned`:''}</p>${rows}</div>`}).join('');
+  return `<div class="panel" style="margin-top:0"><h3>Tournament planner</h3><p style="margin:0;color:#d6dcd9">Add the weekend's games. For every game, the app shows who can pitch and how many pitches he can throw. Type a planned count and every later game updates to match. It uses Pitch Smart rest rules, Pordl targets and the Pordl day-after rule (40 max the day after, 90 over two days).</p></div>
+   <div class="panel"><h3>Staff today</h3><div class="scroll"><table><tr><th>Pitcher</th><th>Ages</th><th>Role</th><th>Today</th></tr>${staff}</table></div><p class="note">Coaching a team? Add every pitcher on your staff under Pitchers and plan the whole weekend here.</p></div>
+   <form class="form panel" id="fTour"><h3 style="margin:0">Add a game</h3>
+    <div class="two"><div><label for="tD">Date</label><input type="date" id="tD" value="${esc(G.length?G[G.length-1].date:TODAY)}" min="${TODAY}"></div><div><label for="tT">Time (optional)</label><input type="time" id="tT"></div></div>
+    <div><label for="tL">Game</label><input id="tL" placeholder="e.g. Pool play vs. Rangers"></div><button class="btn" type="submit">Add game</button></form>
+   ${G.length?games+'<button class="btn line" id="tClear" style="margin-top:12px">Clear tournament</button>':'<p class="note" style="margin-top:12px">No games yet. Add the first game above.</p>'}
+   <p class="note">Plans are a guide. If he's sore or his arm doesn't feel right, he doesn't pitch, whatever the plan says.</p>`;
+}
+document.addEventListener('submit',e=>{if(e.target.id!=='fTour')return;e.preventDefault();e.stopPropagation();
+  const d=$('tD').value;if(!d||d<TODAY){toast('Pick today or a future date');return}
+  TOUR().games.push({id:uid(),date:d,time:$('tT').value||'',label:$('tL').value.trim().slice(0,60)||'Game '+(TOUR().games.length+1)});render();toast('Game added')},true);
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b||!S)return;
+  if(b.dataset.tdel){const t=TOUR();t.games=t.games.filter(g=>g.id!==b.dataset.tdel);delete t.plan[b.dataset.tdel];render();toast('Game removed')}
+  else if(b.id==='tClear'){S.tourney={games:[],plan:{}};render();toast('Tournament cleared')}});
+document.addEventListener('change',e=>{const t=e.target;if(!t.dataset||!t.dataset.tp||!S)return;const [g,pid]=t.dataset.tp.split('|'),n=parseInt(t.value,10),pl=TOUR().plan;
+  pl[g]=pl[g]||{};if(n>0&&n<=200)pl[g][pid]=n;else delete pl[g][pid];const y=scrollY;render();scrollTo(0,y)});
 
 const teamsRecent=p=>new Set(p.outings.filter(o=>o.type==='game'&&o.team&&diff(o.date,TODAY)<14&&diff(o.date,TODAY)>=0).map(o=>o.team)).size;
 const soreToday=(p,d)=>p.checks&&p.checks[d]==='sore';
@@ -375,9 +425,9 @@ function render(){
   const teams=new Set(p.outings.filter(o=>o.type==='game'&&diff(o.date,TODAY)<14&&o.team).map(o=>o.team));
   $('stats').innerHTML=`<div class="st"><b>${wk}</b><span>Game pitches, 7 days</span></div><div class="st"><b>${st.ip.toFixed(1)}</b><span>Innings, 12 months</span><div class="meter"><i style="width:${Math.min(100,st.ip)}%"></i></div></div><div class="st"><b>${teams.size}</b><span>Teams pitched for, 14 days</span></div>`;
   if(S.tab==='queue'&&!ADMIN)S.tab='today';
-  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
+  const tabs=[...(ADMIN?[['queue',`Review queue${WAITING?' ('+WAITING+')':''}`]]:[]),['today','Log outing'],['tour','Tournament'],['video','Video review'],['log','History'],['velo','Velocity'],['care','Arm care'],['plans',ADMIN?'Plans':TIER==='free'?'Upgrade':'My plan'],['rules','Guidelines'],['add','Pitchers']];
   $('tabs').innerHTML=tabs.map(([k,n])=>`<button role="tab" aria-selected="${S.tab===k}" data-tab="${k}">${n}</button>`).join('');
-  $('pane').innerHTML=({today:logPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
+  $('pane').innerHTML=({today:logPane,tour:tourPane,video:videoPane,queue:queuePane,log:histPane,velo:veloPane,care:carePane,plans:plansPane,rules:rulesPane,add:addPane}[S.tab]||logPane)(p);
   if(S.tab==='video')loadMyVideos();if(S.tab==='queue')loadQueue();
   if(S.tab==='velo')drawVelo();
 }
