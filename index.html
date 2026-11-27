@@ -191,7 +191,7 @@ const payUrl=k=>{const u=LINKS[k];if(!u||u.startsWith('__'))return '';return u+(
 function upsell(kind){const pro=kind==='pro';
   return `<div class="panel lock"><div class="sub" style="color:var(--or);font-weight:700">${pro?'Pordl Pitching Pro':'Pordl Pitching Program'}</div>
    <h3 style="font-size:22px;margin:4px 0 6px">${pro?'Get his delivery reviewed by Marcus':'Unlock Marcus\'s daily program'}</h3>
-   <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching each month. Marcus McBeth, former MLB pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
+   <p style="margin:0;color:#d6dcd9">${pro?'Send a video of his pitching or his swing each month. Marcus McBeth, former MLB pitcher and Cardinals scout, breaks it down: what he does well, what to fix, and the drills to fix it. Includes the full daily program.':'Every day, a plan for exactly where he is: recovery after starts, bullpen days, reliever readiness, ramp-up and off-season, plus the Thrower\'s Ten arm care routine.'}</p>
    <button class="btn" data-tab-go="plans" style="margin-top:12px">${pro?'See Pro: $49/month':'See plans: from $15/month'}</button></div>`}
 function plansPane(){
   const cur=ADMIN?'Reviewer (all access)':TIER==='pro'?'Pro':TIER==='program'?'Program':'Free';
@@ -201,7 +201,7 @@ function plansPane(){
      ${mine?'<p class="note" style="color:#8df0b2;font-weight:700">Your current plan</p>':(TIER!=='free'&&!ADMIN)?'<p class="note">To switch plans, use Manage subscription below.</p>':DEMO?'<p class="note">Create an account to subscribe.</p>':url?`<a class="btn" href="${esc(url)}" style="text-decoration:none">${cta}</a>`:'<p class="note">Coming soon.</p>'}</div>`};
   return `<h3 style="font-size:22px">Plans</h3><p class="note" style="margin-top:4px">Your plan: <b style="color:var(--ink)">${cur}</b>${SUB&&SUB.current_period_end&&TIER!=='free'?` · renews ${MN[new Date(SUB.current_period_end).getMonth()]} ${new Date(SUB.current_period_end).getDate()}`:''}</p>
    ${card('program','Program','$15',['Marcus\'s daily plan for starters and relievers','Ramp-up and off-season phases','Thrower\'s Ten arm care routine','Everything in Free'],'Start Program')}
-   ${card('pro','Pro','$49',['One video review from Marcus every month','Breakdown of his delivery, with drills','Everything in Program'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
+   ${card('pro','Pro','$49',['One video review from Marcus every month: pitching or hitting','Breakdown of his delivery or swing, with drills','Everything in Program'],'Start Pro',payUrl('founding')&&TIER==='free'?`<p class="note" style="color:#ffd9c2"><b>Founding member:</b> first 15 families get Pro for $39/month, locked in. <a href="${esc(payUrl('founding'))}" style="color:var(--or);font-weight:700">Claim a founding spot</a></p>`:'')}
    <div class="panel"><h3 style="margin:0 0 6px">Free</h3><ul class="rules"><li>Pitch counts, rest days and Pitch Smart limits</li><li>Can-he-pitch-today status and game planner</li><li>Arm check-ins, history and velocity log</li></ul></div>
    ${SUB&&!DEMO&&PORTAL&&!PORTAL.startsWith('__')?`<a class="btn line" href="${esc(PORTAL)}" style="text-decoration:none;margin-top:12px">Manage subscription (card, cancel)</a><p class="note">Sign in there with ${esc(USER.email)}.</p>`:''}
    ${!DEMO&&TIER==='free'?'<button class="btn line" id="refreshPlan" style="margin-top:12px">Paid? Tap to refresh your plan</button>':''}
@@ -521,18 +521,22 @@ function drawVelo(){
 
 /* ---------- video reviews ---------- */
 const MAXMB=50;
+const VTIPS={pitching:'<li><b>Two angles:</b> side view (from 1st or 3rd base, facing his chest) and from behind (2nd base or behind the mound).</li><li>Film the <b>whole body</b>, head to feet, with a little room around him. Hold the phone steady, or prop it up.</li><li>Film <b>sideways (landscape)</b>, in good light, at normal speed or slow-motion.</li><li>3–5 full-effort pitches per angle is plenty. Keep each clip under 30 seconds.</li><li>Fastballs first. Add other pitches if you want them looked at.</li>',
+  hitting:'<li><b>Two angles:</b> side view (facing his chest, from the first-base side for a righty or the third-base side for a lefty) and from behind (behind the plate, through the backstop).</li><li>Film the <b>whole body</b>, head to feet, from his stance through the finish. Hold the phone steady, or prop it up.</li><li>Film <b>sideways (landscape)</b>, in good light. Slow-motion helps.</li><li>3–5 full swings per angle. Live pitching or front toss is best; tee work is fine too. Keep each clip under 30 seconds.</li><li>Stay safe: film from behind a net or fence.</li>'};
+const VNOTE={pitching:'e.g. Losing control late in games, coach says he\'s opening up early',hitting:'e.g. Rolling over on outside pitches, late on fastballs'};
 function videoPane(p){
-  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Video review</h3><p style="margin:0;color:#d6dcd9">Send a video of his delivery and Marcus McBeth, former MLB pitcher, breaks it down for you. Create a free account to send one.</p></div>`;
+  if(DEMO)return `<div class="panel" style="margin-top:0"><h3>Video review</h3><p style="margin:0;color:#d6dcd9">Send a video of his pitching delivery or his swing and Marcus McBeth, former MLB pitcher, breaks it down for you. Create a free account to send one.</p></div>`;
   if(!hasPro())return upsell('pro')+'<h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>';
   if(!ADMIN&&MYREVIEWS>=1){const n=new Date();const nx=new Date(n.getFullYear(),n.getMonth()+1,1);return `<div class="panel" style="margin-top:0"><h3>This month's review is in</h3><p style="margin:0;color:#d6dcd9">Pro includes one video review a month. Your next one opens ${MN[nx.getMonth()]} 1.</p></div><h3 style="font-size:20px;margin-top:22px">Your videos</h3><div id="vList"><p class="note">Loading…</p></div>`}
   return `<div class="panel" style="margin-top:0"><h3>Send a video to Marcus</h3>
    <p class="note" style="margin-top:0;color:#d6dcd9">Marcus reviews every video himself and replies here, usually within 3 days.</p>
-   <details style="margin:8px 0 12px"><summary style="cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center">How to film it</summary>
-   <ul class="rules" style="margin-top:4px"><li><b>Two angles:</b> side view (from 1st or 3rd base, facing his chest) and from behind (2nd base or behind the mound).</li><li>Film the <b>whole body</b>, head to feet, with a little room around him. Hold the phone steady, or prop it up.</li><li>Film <b>sideways (landscape)</b>, in good light, at normal speed or slow-motion.</li><li>3–5 full-effort pitches per angle is plenty. Keep each clip under 30 seconds.</li><li>Fastballs first. Add other pitches if you want them looked at.</li></ul></details>
    <form class="form" id="fVid">
+    <div><span class="lab">What should Marcus review?</span><div class="seg"><button type="button" class="chip" data-vkind="pitching" aria-pressed="${(S.vkind||'pitching')==='pitching'}">Pitching</button><button type="button" class="chip" data-vkind="hitting" aria-pressed="${S.vkind==='hitting'}">Hitting (swing)</button></div></div>
+    <details style="margin:0"><summary style="cursor:pointer;font-weight:700;min-height:40px;display:flex;align-items:center">How to film ${S.vkind==='hitting'?'his swing':'it'}</summary>
+    <ul class="rules" style="margin-top:4px">${VTIPS[S.vkind==='hitting'?'hitting':'pitching']}</ul></details>
     <div><label for="vFile">Video (${MAXMB} MB max, under 30 seconds works best)</label><input type="file" id="vFile" accept="video/*" style="padding:10px"></div>
     <div><label for="vAngle">Angle</label><select id="vAngle"><option>Side view</option><option>From behind</option><option>Both angles in one clip</option></select></div>
-    <div><label for="vNote">What should Marcus look at? (optional)</label><textarea id="vNote" placeholder="e.g. Losing control late in games, coach says he's opening up early"></textarea></div>
+    <div><label for="vNote">What should Marcus look at? (optional)</label><textarea id="vNote" placeholder="${esc(VNOTE[S.vkind==='hitting'?'hitting':'pitching'])}"></textarea></div>
     <p class="err" id="vErr"></p>
     <button class="btn" type="submit" id="vSend">Send ${esc(p.name)}'s video</button>
    </form></div>
@@ -548,11 +552,11 @@ async function loadMyVideos(){
 }
 function vcard(r,admin){
   const d=new Date(r.created_at);
-  return `<div class="vcard" data-rid="${esc(r.id)}"><div class="hd"><b>${esc(r.pitcher_name)} · ${esc(r.angle||'')}</b><span class="pill ${r.status==='done'?'done':'wait'}">${r.status==='done'?'Reviewed':'Waiting for Marcus'}</span></div>
+  return `<div class="vcard" data-rid="${esc(r.id)}"><div class="hd"><b>${esc(r.pitcher_name)} · ${r.kind==='hitting'?'<span style="color:var(--or)">Swing</span>':'Pitching'} · ${esc(r.angle||'')}</b><span class="pill ${r.status==='done'?'done':'wait'}">${r.status==='done'?'Reviewed':'Waiting for Marcus'}</span></div>
    <div class="note" style="margin-top:4px">${admin?`${esc(r.email||'')} · ${esc(r.band||'')} · ${esc(r.role==='reliever'?'Reliever':'Starter')} · `:''}Sent ${MN[d.getMonth()]} ${d.getDate()}</div>
    ${r.note?`<p style="margin:8px 0 0;color:#d6dcd9">“${esc(r.note)}”</p>`:''}
    <div class="vslot"><button class="btn sm line" data-play="${esc(r.video_path)}" style="margin-top:10px">Watch video</button></div>
-   ${admin?`<div class="wl note" data-uid="${esc(r.user_id)}" data-pid="${esc(r.pitcher_id||'')}"></div>`:''}
+   ${admin&&r.kind!=='hitting'?`<div class="wl note" data-uid="${esc(r.user_id)}" data-pid="${esc(r.pitcher_id||'')}"></div>`:''}
    ${r.reply?`<div class="reply"><b>Marcus's review</b>${esc(r.reply)}</div>`:''}
    ${admin?`<div style="margin-top:10px"><label for="rep-${esc(r.id)}">${r.reply?'Edit your review':'Your review'}</label><textarea id="rep-${esc(r.id)}" placeholder="What he does well, 1–2 things to fix, a drill for each">${esc(r.reply||'')}</textarea><button class="btn" data-reply="${esc(r.id)}" style="margin-top:8px">${r.reply?'Update review':'Send review'}</button></div>`:''}</div>`;
 }
@@ -582,7 +586,7 @@ async function sendVideo(){
   const path=`${USER.id}/${Date.now()}.${ext}`;
   const up=await sb.storage.from('videos').upload(path,f,{contentType:f.type});
   if(up.error){btn.disabled=false;btn.textContent=`Send ${p.name}'s video`;err.textContent='Upload failed: '+up.error.message;return}
-  const ins=await sb.from('reviews').insert({user_id:USER.id,email:USER.email,pitcher_id:p.id,pitcher_name:p.name,band:p.band,role:p.role,video_path:path,angle:$('vAngle').value,note:$('vNote').value.trim().slice(0,1000)});
+  const ins=await sb.from('reviews').insert({user_id:USER.id,email:USER.email,pitcher_id:p.id,pitcher_name:p.name,band:p.band,role:p.role,video_path:path,kind:S.vkind==='hitting'?'hitting':'pitching',angle:$('vAngle').value,note:$('vNote').value.trim().slice(0,1000)});
   if(ins.error){btn.disabled=false;btn.textContent=`Send ${p.name}'s video`;err.textContent='Saved the video but couldn\'t create the request: '+ins.error.message;return}
   MYREVIEWS++;toast('Sent to Marcus');render();
 }
@@ -590,6 +594,7 @@ document.addEventListener('submit',e=>{if(e.target.id==='fVid'){e.preventDefault
 document.addEventListener('click',async e=>{const b=e.target.closest('button');if(!b||!sb)return;
   if(b.dataset.play){const slot=b.closest('.vslot');b.textContent='Loading…';const u=await signed(b.dataset.play);slot.innerHTML=u?`<video controls playsinline preload="metadata" src="${esc(u)}"></video>`:'<p class="err">Couldn\'t load the video.</p>'}
   else if(b.dataset.qf){S.qf=b.dataset.qf;render()}
+  else if(b.dataset.vkind){S.vkind=b.dataset.vkind;const n=$('vNote'),a=$('vAngle'),keep=[n&&n.value,a&&a.value];render();if(keep[0]&&$('vNote'))$('vNote').value=keep[0];if(keep[1]&&$('vAngle'))$('vAngle').value=keep[1]}
   else if(b.id==='refreshPlan'){b.textContent='Checking…';b.disabled=true;for(let i=0;i<5&&TIER==='free';i++){await loadPlan();if(TIER==='free')await new Promise(r=>setTimeout(r,2000))}render();toast(TIER==='free'?'No payment found yet. Try again in a minute.':'Unlocked! Welcome to '+(TIER==='pro'?'Pro':'the Program')+'.')}
   else if(b.dataset.reply){const id=b.dataset.reply,t=$('rep-'+id).value.trim();if(!t){toast('Write your review first');return}
     b.disabled=true;const {error}=await sb.from('reviews').update({reply:t,status:'done',replied_at:new Date().toISOString()}).eq('id',id);
