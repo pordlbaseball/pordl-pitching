@@ -473,6 +473,8 @@ function recruitPane(p){
     <p class="err" id="rErr"></p>
     <button class="btn" type="submit" id="rSend">Send to Marcus</button></form>
    <p class="note">Your email (${esc(USER?USER.email:'')}) is included. Learn more at <a href="https://pordl.ai" style="color:var(--or)">pordl.ai</a></p></div>`}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-tab-go]');if(!b)return;
+  setTimeout(()=>{const t=$('tabs');if(t&&t.getBoundingClientRect().top>innerHeight*0.5)t.scrollIntoView({behavior:'smooth',block:'start'})},30)});
 document.addEventListener('submit',async e=>{if(e.target.id!=='fRecruit')return;e.preventDefault();e.stopPropagation();
   if(DEMO||!USER||!sb)return;const p=P(),err=$('rErr'),b=$('rSend');err.textContent='';
   if(!$('rGrad').value){err.textContent='Choose his grad year.';$('rGrad').focus();return}
